@@ -16,9 +16,6 @@ Environment variables:
   GBROWSE_GIT
     git command, default is git.
 
-  GBROWSE_GH
-    github cli, default is gh.
-
   GBROWSE_DEBUG
     enable debug log if set.
 

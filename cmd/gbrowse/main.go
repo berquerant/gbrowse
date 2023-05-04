@@ -10,7 +10,6 @@ import (
 
 	"github.com/berquerant/gbrowse/browse"
 	"github.com/berquerant/gbrowse/ctxlog"
-	"github.com/berquerant/gbrowse/gh"
 	"github.com/berquerant/gbrowse/git"
 	"github.com/berquerant/gbrowse/parse"
 	"github.com/berquerant/gbrowse/urlx"
@@ -20,7 +19,6 @@ import (
 
 type envConfig struct {
 	Git     string `env:"GBROWSE_GIT" envDefault:"git"`
-	GitHub  string `env:"GBROWSE_GH" envDefault:"gh"`
 	IsDebug bool   `env:"GBROWSE_DEBUG"`
 }
 
@@ -44,9 +42,6 @@ Usage:
 Environment variables:
   GBROWSE_GIT
     git command, default is git.
-
-  GBROWSE_GH
-    github cli, default is gh.
 
   GBROWSE_DEBUG
     enable debug log if set.
@@ -139,39 +134,17 @@ func run(ctx context.Context, args *args) int {
 		return 1
 	}
 
-	buildUrl := func() (string, bool) {
-		targetUrl, err := urlx.Build(ctx, git.New(git.WithGitCommand(args.config.Git)), target)
-		if err != nil {
-			logger.Error("build url",
-				zap.Error(err),
-			)
-			return "", false
-		}
-		return targetUrl, true
+	targetUrl, err := urlx.Build(ctx, git.New(git.WithGitCommand(args.config.Git)), target)
+	if err != nil {
+		logger.Error("build url",
+			zap.Error(err),
+		)
+		return 1
 	}
 
 	if args.printOnly {
-		targetUrl, ok := buildUrl()
-		if !ok {
-			return 1
-		}
 		fmt.Print(targetUrl)
 		return 0
-	}
-
-	if err := gh.New(gh.WithGHCommand(args.config.GitHub)).Browse(ctx, target.String()); err != nil {
-		logger.Info("github cli failure",
-			zap.Error(err),
-		)
-		// fallback to browse
-	} else {
-		// gh browse succeeded
-		return 0
-	}
-
-	targetUrl, ok := buildUrl()
-	if !ok {
-		return 1
 	}
 
 	if err := browse.Run(ctx, targetUrl); err != nil {
