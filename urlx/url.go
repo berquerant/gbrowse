@@ -10,16 +10,23 @@ import (
 	"github.com/berquerant/gbrowse/parse"
 )
 
+//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "DefaultBranch bool" -option -output config_generated.go
+
 // Build assembles url from repository and specified path.
-func Build(ctx context.Context, gitCommand git.Git, target *parse.Target) (string, error) {
-	u, err := build(ctx, gitCommand, target)
+func Build(ctx context.Context, gitCommand git.Git, target *parse.Target, opt ...ConfigOption) (string, error) {
+	config := NewConfigBuilder().
+		DefaultBranch(false).
+		Build()
+	config.Apply(opt...)
+
+	u, err := build(ctx, gitCommand, target, config.DefaultBranch.Get())
 	if err != nil {
 		return "", fmt.Errorf("failed to build url: %w", err)
 	}
 	return u, nil
 }
 
-func build(ctx context.Context, gitCommand git.Git, target *parse.Target) (string, error) {
+func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaultBranch bool) (string, error) {
 	type result struct {
 		repoUrl  string
 		branch   string
@@ -37,7 +44,12 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target) (strin
 			res.repoUrl = parse.ReadRepoUrl(r)
 		}
 		{
-			r, err := gitCommand.HeadObjectName(ctx)
+			r, err := func() (string, error) {
+				if defaultBranch {
+					return gitCommand.DefaultBranch(ctx)
+				}
+				return gitCommand.HeadObjectName(ctx)
+			}()
 			if err != nil {
 				return err
 			}

@@ -2,6 +2,8 @@ package git
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/berquerant/gbrowse/execx"
 )
@@ -10,6 +12,7 @@ import (
 
 // Git is git runner.
 type Git interface {
+	DefaultBranch(ctx context.Context) (string, error)
 	RemoteOriginUrl(ctx context.Context) (string, error)
 	HeadObjectName(ctx context.Context) (string, error)
 	ShowPrefix(ctx context.Context) (string, error)
@@ -30,6 +33,27 @@ func New(opt ...ConfigOption) Git {
 	return &gitImpl{
 		config: config,
 	}
+}
+
+func (g *gitImpl) DefaultBranch(ctx context.Context) (string, error) {
+	r, err := g.run(ctx, "remote", "show", "origin")
+	if err != nil {
+		return "", err
+	}
+
+	for _, p := range strings.Split(r, "\n") {
+		if strings.Contains(p, "HEAD branch:") {
+			xs := strings.Split(p, ":")
+			if len(xs) < 2 {
+				break
+			}
+			if branch := strings.ReplaceAll(xs[1], " ", ""); branch != "" {
+				return branch, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("cannot find default branch from %s", r)
 }
 
 func (g *gitImpl) RemoteOriginUrl(ctx context.Context) (string, error) {

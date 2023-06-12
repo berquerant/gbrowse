@@ -65,9 +65,10 @@ func fail(err error) {
 
 func main() {
 	var (
-		version   = flag.Bool("version", false, "print version")
-		printOnly = flag.Bool("print", false, "only print generated url")
-		config    envConfig
+		version       = flag.Bool("version", false, "print version")
+		printOnly     = flag.Bool("print", false, "only print generated url")
+		defaultBranch = flag.Bool("default", false, "use default branch instead of the current branch")
+		config        envConfig
 	)
 
 	log.SetFlags(0)
@@ -107,16 +108,18 @@ func main() {
 	})
 
 	os.Exit(run(ctxlog.With(context.Background(), rawLogger), &args{
-		config:    &config,
-		target:    flag.Arg(0),
-		printOnly: *printOnly,
+		config:        &config,
+		target:        flag.Arg(0),
+		printOnly:     *printOnly,
+		defaultBranch: *defaultBranch,
 	}))
 }
 
 type args struct {
-	config    *envConfig
-	target    string
-	printOnly bool
+	config        *envConfig
+	target        string
+	printOnly     bool
+	defaultBranch bool
 }
 
 func run(ctx context.Context, args *args) int {
@@ -134,7 +137,7 @@ func run(ctx context.Context, args *args) int {
 		return 1
 	}
 
-	targetUrl, err := urlx.Build(ctx, git.New(git.WithGitCommand(args.config.Git)), target)
+	targetUrl, err := urlx.Build(ctx, git.New(git.WithGitCommand(args.config.Git)), target, urlx.WithDefaultBranch(args.defaultBranch))
 	if err != nil {
 		logger.Error("build url",
 			zap.Error(err),
