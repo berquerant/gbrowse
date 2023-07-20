@@ -33,3 +33,5 @@ jobs:
         run: make
       - name: Test
         run: make test
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@v1
