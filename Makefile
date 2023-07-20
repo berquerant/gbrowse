@@ -1,6 +1,6 @@
 GOMOD = go mod
-GOBUILD = go build -trimpath
-GOTEST = go test
+GOBUILD = go build -v -trimpath -race
+GOTEST = go test -v -cover -race
 
 ROOT = $(shell git rev-parse --show-toplevel)
 BIN = dist/gbrowse
@@ -15,17 +15,17 @@ LDFLAGS = -ldflags="-X '$(LDFLAGS_PKG).AuthorName=' -X '$(LDFLAGS_PKG).AuthorEma
 
 .PHONY: $(BIN)
 $(BIN):
-	$(GOBUILD) -v -o $@ $(LDFLAGS) $(CMD)
+	$(GOBUILD) -o $@ $(LDFLAGS) $(CMD)
 
 DOCKER_RUN = docker run --rm -v "$(ROOT)":/usr/src/myapp -w /usr/src/myapp
 DOCKER_IMAGE = golang:1.20
 
 .PHONY: test
 test:
-ifdef COOKIECUTTER_GO_DOCKER_TEST
-	$(DOCKER_RUN) $(DOCKER_IMAGE) $(GOTEST) -v -cover $(LDFLAGS) ./...
+ifdef GO_DOCKER_TEST
+	$(DOCKER_RUN) $(DOCKER_IMAGE) $(GOTEST) $(LDFLAGS) ./...
 else
-	$(GOTEST) -v -cover $(LDFLAGS) ./...
+	$(GOTEST) $(LDFLAGS) ./...
 endif
 
 .PHONY: init
