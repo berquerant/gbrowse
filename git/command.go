@@ -13,7 +13,7 @@ import (
 // Git is git runner.
 type Git interface {
 	DefaultBranch(ctx context.Context) (string, error)
-	RemoteOriginUrl(ctx context.Context) (string, error)
+	RemoteOriginURL(ctx context.Context) (string, error)
 	HeadObjectName(ctx context.Context) (string, error)
 	ShowPrefix(ctx context.Context) (string, error)
 	RelativePath(ctx context.Context, path string) (string, error)
@@ -56,7 +56,7 @@ func (g *gitImpl) DefaultBranch(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("cannot find default branch from %s", r)
 }
 
-func (g *gitImpl) RemoteOriginUrl(ctx context.Context) (string, error) {
+func (g *gitImpl) RemoteOriginURL(ctx context.Context) (string, error) {
 	return g.run(ctx, "config", "--get", "remote.origin.url")
 }
 

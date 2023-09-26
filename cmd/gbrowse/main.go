@@ -53,10 +53,6 @@ func Usage() {
 	flag.PrintDefaults()
 }
 
-func PrintLdflags() {
-	fmt.Fprintln(os.Stderr, Ldflags())
-}
-
 func fail(err error) {
 	if err != nil {
 		panic(err)
@@ -65,7 +61,6 @@ func fail(err error) {
 
 func main() {
 	var (
-		version       = flag.Bool("version", false, "print version")
 		printOnly     = flag.Bool("print", false, "only print generated url")
 		defaultBranch = flag.Bool("default", false, "use default branch instead of the current branch")
 		config        envConfig
@@ -74,11 +69,6 @@ func main() {
 	log.SetFlags(0)
 	flag.Usage = Usage
 	flag.Parse()
-
-	if *version {
-		PrintLdflags()
-		return
-	}
 
 	var envList []map[string]any
 	fail(env.ParseWithOptions(&config, env.Options{
@@ -124,7 +114,9 @@ type args struct {
 
 func run(ctx context.Context, args *args) int {
 	logger := ctxlog.From(ctx)
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync()
+	}()
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
@@ -137,7 +129,12 @@ func run(ctx context.Context, args *args) int {
 		return 1
 	}
 
-	targetUrl, err := urlx.Build(ctx, git.New(git.WithGitCommand(args.config.Git)), target, urlx.WithDefaultBranch(args.defaultBranch))
+	targetURL, err := urlx.Build(
+		ctx,
+		git.New(git.WithGitCommand(args.config.Git)),
+		target,
+		urlx.WithDefaultBranch(args.defaultBranch),
+	)
 	if err != nil {
 		logger.Error("build url",
 			zap.Error(err),
@@ -146,11 +143,11 @@ func run(ctx context.Context, args *args) int {
 	}
 
 	if args.printOnly {
-		fmt.Print(targetUrl)
+		fmt.Print(targetURL)
 		return 0
 	}
 
-	if err := browse.Run(ctx, targetUrl); err != nil {
+	if err := browse.Run(ctx, targetURL); err != nil {
 		logger.Error("browse",
 			zap.Error(err),
 		)

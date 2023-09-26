@@ -1,37 +1,47 @@
 GOMOD = go mod
-GOBUILD = go build -v -trimpath -race
+GOBUILD = go build -trimpath -race -v
 GOTEST = go test -v -cover -race
 
 ROOT = $(shell git rev-parse --show-toplevel)
 BIN = dist/gbrowse
-CMD = "./cmd/gbrowse"
-
-VERSION = $(shell git describe --tags --abbrev=0)
-COMMIT = $(shell git rev-parse HEAD)
-GOVERSION = $(shell go version)
-
-LDFLAGS_PKG = main
-LDFLAGS = -ldflags="-X '$(LDFLAGS_PKG).AuthorName=' -X '$(LDFLAGS_PKG).AuthorEmail=' -X '$(LDFLAGS_PKG).Version=$(VERSION)' -X '$(LDFLAGS_PKG).GoVersion=$(GOVERSION)' -X '$(LDFLAGS_PKG).Commit=$(COMMIT)' -X '$(LDFLAGS_PKG).Project=gbrowse' -X '$(LDFLAGS_PKG).GithubUser=berquerant'"
+CMD = ./cmd/gbrowse
 
 .PHONY: $(BIN)
 $(BIN):
-	$(GOBUILD) -o $@ $(LDFLAGS) $(CMD)
-
-DOCKER_RUN = docker run --rm -v "$(ROOT)":/usr/src/myapp -w /usr/src/myapp
-DOCKER_IMAGE = golang:1.20
+	$(GOBUILD) -o $@ $(CMD)
 
 .PHONY: test
 test:
-ifdef GO_DOCKER_TEST
-	$(DOCKER_RUN) $(DOCKER_IMAGE) $(GOTEST) $(LDFLAGS) ./...
-else
-	$(GOTEST) $(LDFLAGS) ./...
-endif
+	$(GOTEST) ./...
 
 .PHONY: init
 init:
 	$(GOMOD) tidy
 
 .PHONY: generate
-generate:
+generate: clean-generated
 	go generate ./...
+
+.PHONY: clean-generated
+clean-generated:
+	find . -name "*_generated.go" -type f -delete
+
+.PHONY: vuln
+vuln:
+	go run golang.org/x/vuln/cmd/govulncheck@dc254a37b504c72564734ba346000244a97630a9 ./...
+
+DOCKER_RUN = docker run --rm -v "$(ROOT)":/usr/src/myapp -w /usr/src/myapp
+DOCKER_GO_IMAGE = golang:1.21
+DOCKER_LINT_IMAGE = golangci/golangci-lint:v1.54.2
+
+.PHONY: docker-test
+docker-test:
+	$(DOCKER_RUN) $(DOCKER_GO_IMAGE) $(GOTEST) ./...
+
+.PHONY: docker-dist
+docker-dist:
+	$(DOCKER_RUN) $(DOCKER_GO_IMAGE) $(GOBUILD) -o $(BIN) $(CMD)
+
+.PHONY: docker-lint
+docker-lint:
+	$(DOCKER_RUN) $(DOCKER_LINT_IMAGE) golangci-lint run -v

@@ -2,7 +2,7 @@ package parse
 
 import "strings"
 
-func ReadRepoUrl(value string) string {
+func ReadRepoURL(value string) string {
 	replaceTuples := []struct {
 		from, to string
 	}{

@@ -28,7 +28,7 @@ func Build(ctx context.Context, gitCommand git.Git, target *parse.Target, opt ..
 
 func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaultBranch bool) (string, error) {
 	type result struct {
-		repoUrl  string
+		repoURL  string
 		branch   string
 		path     string
 		fragment string
@@ -37,11 +37,11 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaul
 
 	if err := func() error {
 		{
-			r, err := gitCommand.RemoteOriginUrl(ctx)
+			r, err := gitCommand.RemoteOriginURL(ctx)
 			if err != nil {
 				return err
 			}
-			res.repoUrl = parse.ReadRepoUrl(r)
+			res.repoURL = parse.ReadRepoURL(r)
 		}
 		{
 			r, err := func() (string, error) {
@@ -81,7 +81,7 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaul
 	}
 
 	return fmt.Sprintf("%s/blob/%s/%s%s",
-		res.repoUrl, res.branch, res.path, res.fragment,
+		res.repoURL, res.branch, res.path, res.fragment,
 	), nil
 }
 

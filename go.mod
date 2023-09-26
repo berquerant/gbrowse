@@ -1,6 +1,6 @@
 module github.com/berquerant/gbrowse
 
-go 1.20
+go 1.21.0
 
 require (
 	github.com/caarlos0/env/v8 v8.0.0

@@ -24,6 +24,4 @@ Flags:
         use default branch instead of the current branch
   -print
         only print generated url
-  -version
-        print version
 ```

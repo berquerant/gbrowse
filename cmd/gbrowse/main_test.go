@@ -11,8 +11,8 @@ func TestEndToEnd(t *testing.T) {
 	e := newExecutor(t)
 	defer e.close()
 
-	if err := run(e.cmd, "-version"); err != nil {
-		t.Fatalf("%s version %v", e.cmd, err)
+	if err := run(e.cmd, "-h"); err != nil {
+		t.Fatalf("%s help %v", e.cmd, err)
 	}
 
 }

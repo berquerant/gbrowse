@@ -26,7 +26,7 @@ func TestReadRepoUrl(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.title, func(t *testing.T) {
-			got := parse.ReadRepoUrl(tc.value)
+			got := parse.ReadRepoURL(tc.value)
 			assert.Equal(t, tc.want, got)
 		})
 	}
