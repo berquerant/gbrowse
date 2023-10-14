@@ -30,6 +30,10 @@ clean-generated:
 vuln:
 	go run golang.org/x/vuln/cmd/govulncheck ./...
 
+.PHONY: vet
+vet:
+	go vet ./...
+
 DOCKER_RUN = docker run --rm -v "$(ROOT)":/usr/src/myapp -w /usr/src/myapp
 DOCKER_GO_IMAGE = golang:1.21
 DOCKER_LINT_IMAGE = golangci/golangci-lint:v1.54.2
@@ -41,7 +45,3 @@ docker-test:
 .PHONY: docker-dist
 docker-dist:
 	$(DOCKER_RUN) $(DOCKER_GO_IMAGE) $(GOBUILD) -o $(BIN) $(CMD)
-
-.PHONY: docker-lint
-docker-lint:
-	$(DOCKER_RUN) $(DOCKER_LINT_IMAGE) golangci-lint run -v
