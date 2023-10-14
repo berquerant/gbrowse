@@ -37,8 +37,7 @@ func (c *envConfig) logLevel() slog.Level {
 
 func (c *envConfig) logHandlerOptions() *slog.HandlerOptions {
 	return &slog.HandlerOptions{
-		Level:     c.logLevel(),
-		AddSource: c.IsDebug,
+		Level: c.logLevel(),
 	}
 }
 
