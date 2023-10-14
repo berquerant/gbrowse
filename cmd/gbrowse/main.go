@@ -105,12 +105,23 @@ func main() {
 		)
 	})
 
-	os.Exit(run(ctxlog.With(context.Background(), logger), &args{
+	run(ctxlog.With(context.Background(), logger), &args{
 		config:        &config,
 		target:        flag.Arg(0),
 		printOnly:     *printOnly,
 		defaultBranch: *defaultBranch,
-	}))
+	}).exit()
+}
+
+type exitCode int
+
+const (
+	eSuccess exitCode = iota
+	eFailure
+)
+
+func (c exitCode) exit() {
+	os.Exit(int(c))
 }
 
 type args struct {
@@ -120,7 +131,7 @@ type args struct {
 	defaultBranch bool
 }
 
-func run(ctx context.Context, args *args) int {
+func run(ctx context.Context, args *args) exitCode {
 	logger := ctxlog.From(ctx)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
@@ -131,7 +142,7 @@ func run(ctx context.Context, args *args) int {
 		logger.Error("parse target",
 			ctxlog.Err(err),
 		)
-		return 1
+		return eFailure
 	}
 
 	targetURL, err := urlx.Build(
@@ -144,19 +155,19 @@ func run(ctx context.Context, args *args) int {
 		logger.Error("build url",
 			ctxlog.Err(err),
 		)
-		return 1
+		return eFailure
 	}
 
 	if args.printOnly {
 		fmt.Print(targetURL)
-		return 0
+		return eSuccess
 	}
 
 	if err := browse.Run(ctx, targetURL); err != nil {
 		logger.Error("browse",
 			ctxlog.Err(err),
 		)
-		return 1
+		return eFailure
 	}
-	return 0
+	return eSuccess
 }
