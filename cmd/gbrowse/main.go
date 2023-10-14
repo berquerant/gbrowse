@@ -69,12 +69,6 @@ func Usage() {
 	flag.PrintDefaults()
 }
 
-func fail(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func main() {
 	var (
 		printOnly     = flag.Bool("print", false, "only print generated url")
