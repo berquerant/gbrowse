@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/berquerant/gbrowse/ctxlog"
-	"go.uber.org/zap"
 )
 
 func Run(ctx context.Context, command string, arg ...string) (string, error) {
@@ -27,18 +26,18 @@ func Run(ctx context.Context, command string, arg ...string) (string, error) {
 			strings.Join(cmd.Args, " "), err, stderr.String())
 
 		logger.Debug("failed to execx.Run",
-			zap.String("command", strings.Join(cmd.Args, " ")),
-			zap.Strings("command_list", cmd.Args),
-			zap.Error(err),
+			ctxlog.S("command", strings.Join(cmd.Args, " ")),
+			ctxlog.SS("command_list", cmd.Args),
+			ctxlog.Err(err),
 		)
 		return "", err
 	}
 
 	result := strings.TrimSuffix(stdout.String(), "\n")
 	logger.Debug("execx.Run",
-		zap.String("command", strings.Join(cmd.Args, " ")),
-		zap.Strings("command_list", cmd.Args),
-		zap.String("result", result),
+		ctxlog.S("command", strings.Join(cmd.Args, " ")),
+		ctxlog.SS("command_list", cmd.Args),
+		ctxlog.S("result", result),
 	)
 	return result, nil
 }

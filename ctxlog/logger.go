@@ -3,7 +3,7 @@ package ctxlog
 import (
 	"context"
 
-	"go.uber.org/zap"
+	"golang.org/x/exp/slog"
 )
 
 type ctxKey string
@@ -22,48 +22,44 @@ func With(ctx context.Context, instance Logger) context.Context {
 	return context.WithValue(ctx, ctxKeyValue, instance)
 }
 
-// Logger is a nil safe wrapper of zap.Logger.
 type Logger interface {
-	Error(msg string, fields ...zap.Field)
-	Info(msg string, fields ...zap.Field)
-	Debug(msg string, fields ...zap.Field)
-	Sync() error
+	Error(msg string, attrs ...Attr)
+	Info(msg string, attrs ...Attr)
+	Debug(msg string, attrs ...Attr)
 }
 
 // New returns a new Logger.
-func New(instance *zap.Logger) Logger {
+func New(instance *slog.Logger) Logger {
 	return &logger{
 		l: instance,
 	}
 }
 
 type logger struct {
-	l *zap.Logger
+	l *slog.Logger
 }
 
-func (l *logger) Sync() error {
+func (l *logger) logAttrs(level slog.Level, msg string, attrs ...Attr) {
 	if l.isNil() {
-		return nil
+		return
 	}
-	return l.l.Sync()
+	sAttrs := make([]slog.Attr, len(attrs))
+	for i, attr := range attrs {
+		sAttrs[i] = slog.Attr(attr)
+	}
+	l.l.LogAttrs(nil, level, msg, sAttrs...)
 }
 
-func (l *logger) Info(msg string, fields ...zap.Field) {
-	if !l.isNil() {
-		l.l.Info(msg, fields...)
-	}
+func (l *logger) Info(msg string, attrs ...Attr) {
+	l.logAttrs(slog.LevelInfo, msg, attrs...)
 }
 
-func (l *logger) Error(msg string, fields ...zap.Field) {
-	if !l.isNil() {
-		l.l.Error(msg, fields...)
-	}
+func (l *logger) Error(msg string, attrs ...Attr) {
+	l.logAttrs(slog.LevelError, msg, attrs...)
 }
 
-func (l *logger) Debug(msg string, fields ...zap.Field) {
-	if !l.isNil() {
-		l.l.Debug(msg, fields...)
-	}
+func (l *logger) Debug(msg string, attrs ...Attr) {
+	l.logAttrs(slog.LevelDebug, msg, attrs...)
 }
 
 func (l *logger) isNil() bool {

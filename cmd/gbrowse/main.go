@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 
@@ -14,7 +13,7 @@ import (
 	"github.com/berquerant/gbrowse/parse"
 	"github.com/berquerant/gbrowse/urlx"
 	"github.com/caarlos0/env/v8"
-	"go.uber.org/zap"
+	"golang.org/x/exp/slog"
 )
 
 type envConfig struct {
@@ -22,11 +21,22 @@ type envConfig struct {
 	IsDebug bool   `env:"GBROWSE_DEBUG"`
 }
 
-func (c *envConfig) Logger() (*zap.Logger, error) {
+func (c *envConfig) logLevel() slog.Level {
 	if c.IsDebug {
-		return zap.NewDevelopment()
+		return slog.LevelDebug
 	}
-	return zap.NewProduction()
+	return slog.LevelInfo
+}
+
+func (c *envConfig) logHandlerOptions() *slog.HandlerOptions {
+	return &slog.HandlerOptions{
+		Level:     c.logLevel(),
+		AddSource: c.IsDebug,
+	}
+}
+
+func (c *envConfig) logger() ctxlog.Logger {
+	return ctxlog.New(slog.New(slog.NewJSONHandler(os.Stdout, c.logHandlerOptions())))
 }
 
 const usage = `gbrowse - Open the repo in the browser
@@ -66,7 +76,6 @@ func main() {
 		config        envConfig
 	)
 
-	log.SetFlags(0)
 	flag.Usage = Usage
 	flag.Parse()
 
@@ -80,24 +89,23 @@ func main() {
 			})
 		},
 	}))
-	rawLogger, err := config.Logger()
-	fail(err)
+	logger := config.logger()
 	for _, d := range envList {
-		rawLogger.Debug("env",
-			zap.Any("tag", d["tag"]),
-			zap.Any("value", d["value"]),
-			zap.Any("default", d["default"]),
+		logger.Debug("env",
+			ctxlog.Any("tag", d["tag"]),
+			ctxlog.Any("value", d["value"]),
+			ctxlog.Any("default", d["default"]),
 		)
 	}
 	flag.VisitAll(func(f *flag.Flag) {
-		rawLogger.Debug("flag",
-			zap.String("tag", f.Name),
-			zap.String("value", f.Value.String()),
-			zap.Bool("default", f.Value.String() == f.DefValue),
+		logger.Debug("flag",
+			ctxlog.S("tag", f.Name),
+			ctxlog.S("value", f.Value.String()),
+			ctxlog.B("default", f.Value.String() == f.DefValue),
 		)
 	})
 
-	os.Exit(run(ctxlog.With(context.Background(), rawLogger), &args{
+	os.Exit(run(ctxlog.With(context.Background(), logger), &args{
 		config:        &config,
 		target:        flag.Arg(0),
 		printOnly:     *printOnly,
@@ -114,9 +122,6 @@ type args struct {
 
 func run(ctx context.Context, args *args) int {
 	logger := ctxlog.From(ctx)
-	defer func() {
-		_ = logger.Sync()
-	}()
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
@@ -124,7 +129,7 @@ func run(ctx context.Context, args *args) int {
 	target, err := parse.ReadTarget(args.target)
 	if err != nil {
 		logger.Error("parse target",
-			zap.Error(err),
+			ctxlog.Err(err),
 		)
 		return 1
 	}
@@ -137,7 +142,7 @@ func run(ctx context.Context, args *args) int {
 	)
 	if err != nil {
 		logger.Error("build url",
-			zap.Error(err),
+			ctxlog.Err(err),
 		)
 		return 1
 	}
@@ -149,7 +154,7 @@ func run(ctx context.Context, args *args) int {
 
 	if err := browse.Run(ctx, targetURL); err != nil {
 		logger.Error("browse",
-			zap.Error(err),
+			ctxlog.Err(err),
 		)
 		return 1
 	}
