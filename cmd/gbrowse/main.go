@@ -9,16 +9,23 @@ import (
 
 	"github.com/berquerant/gbrowse/browse"
 	"github.com/berquerant/gbrowse/ctxlog"
+	"github.com/berquerant/gbrowse/env"
 	"github.com/berquerant/gbrowse/git"
 	"github.com/berquerant/gbrowse/parse"
 	"github.com/berquerant/gbrowse/urlx"
-	"github.com/caarlos0/env/v8"
 	"golang.org/x/exp/slog"
 )
 
 type envConfig struct {
-	Git     string `env:"GBROWSE_GIT" envDefault:"git"`
-	IsDebug bool   `env:"GBROWSE_DEBUG"`
+	Git     string
+	IsDebug bool
+}
+
+func newEnvConfig() *envConfig {
+	var c envConfig
+	c.Git = env.GetOr("GBROWSE_GIT", "git")
+	c.IsDebug = env.GetOr("GBROWSE_DEBUG", "") != ""
+	return &c
 }
 
 func (c *envConfig) logLevel() slog.Level {
@@ -73,30 +80,14 @@ func main() {
 	var (
 		printOnly     = flag.Bool("print", false, "only print generated url")
 		defaultBranch = flag.Bool("default", false, "use default branch instead of the current branch")
-		config        envConfig
+		config        = newEnvConfig()
+		logger        = config.logger()
 	)
 
 	flag.Usage = Usage
 	flag.Parse()
 
-	var envList []map[string]any
-	fail(env.ParseWithOptions(&config, env.Options{
-		OnSet: func(tag string, value any, isDefault bool) {
-			envList = append(envList, map[string]any{
-				"tag":     tag,
-				"value":   value,
-				"default": isDefault,
-			})
-		},
-	}))
-	logger := config.logger()
-	for _, d := range envList {
-		logger.Debug("env",
-			ctxlog.Any("tag", d["tag"]),
-			ctxlog.Any("value", d["value"]),
-			ctxlog.Any("default", d["default"]),
-		)
-	}
+	logger.Debug("env", ctxlog.Any("values", config))
 	flag.VisitAll(func(f *flag.Flag) {
 		logger.Debug("flag",
 			ctxlog.S("tag", f.Name),
@@ -106,7 +97,7 @@ func main() {
 	})
 
 	run(ctxlog.With(context.Background(), logger), &args{
-		config:        &config,
+		config:        config,
 		target:        flag.Arg(0),
 		printOnly:     *printOnly,
 		defaultBranch: *defaultBranch,

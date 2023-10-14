@@ -3,7 +3,6 @@ module github.com/berquerant/gbrowse
 go 1.21.3
 
 require (
-	github.com/caarlos0/env/v8 v8.0.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 )
