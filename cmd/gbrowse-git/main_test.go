@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,66 +30,62 @@ func TestEndToEnd(t *testing.T) {
 		"relative_path":     relativePath,
 	})
 	envSlices := []string{
-		fmt.Sprintf("GBROWSE_GIT=%s", e.git),                   // mock git binary
-		fmt.Sprintf("GBROWSE_GIT_CONFIG=%s", string(envBytes)), // see cmd/gbrowse-git
+		fmt.Sprintf("GBROWSE_GIT=%s", e.git),
+		fmt.Sprintf("GBROWSE_GIT_CONFIG=%s", string(envBytes)),
 	}
 
-	t.Run("help", func(t *testing.T) {
-		output, err := run(envSlices, e.cmd, "-h")
-		assert.Nil(t, err)
-		t.Log(string(output))
-	})
-
-	t.Run("run", func(t *testing.T) {
+	t.Run("gbrowse-git", func(t *testing.T) {
 		for _, tc := range []struct {
 			name string
-			opt  []string
+			args []string
 			want string
 		}{
 			{
-				name: "root",
-				opt:  []string{"-print"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix}, "/"),
+				name: "DefaultBranch",
+				args: []string{"remote", "show", "origin"},
+				want: fmt.Sprintf("HEAD branch: %s", defaultBranch),
 			},
 			{
-				name: "dir",
-				opt:  []string{"-print", "dir"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix, "dir"}, "/"),
+				name: "RemoteOriginURL",
+				args: []string{"config", "--get", "remote.origin.url"},
+				want: remoteOriginURL,
 			},
 			{
-				name: "dir/file",
-				opt:  []string{"-print", "dir/file"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix, "dir/file"}, "/"),
+				name: "HeadObjectName",
+				args: []string{"rev-parse", "--abbrev-ref", "@"},
+				want: headObjectName,
 			},
 			{
-				name: "linum",
-				opt:  []string{"-print", "dir/file:10"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix, "dir/file#L10"}, "/"),
+				name: "ShowPrefix",
+				args: []string{"rev-parse", "--show-prefix"},
+				want: showPrefix,
+			},
+			{
+				name: "RelativePath",
+				args: []string{"ls-files", "--full-name"},
+				want: relativePath,
 			},
 		} {
 			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
-				output, err := run(envSlices, e.cmd, tc.opt...)
+				output, err := run(envSlices, e.git, tc.args...)
 				assert.Nil(t, err)
 				assert.Equal(t, tc.want, string(output))
 			})
 		}
 	})
-
 }
 
 func run(env []string, name string, arg ...string) ([]byte, error) {
 	cmd := exec.Command(name, arg...)
 	cmd.Env = env
 	cmd.Dir = "."
-	// cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Output()
 }
 
 type executor struct {
 	dir string
-	cmd string
 	git string
 }
 
@@ -107,19 +102,13 @@ func (e *executor) init(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := filepath.Join(dir, "gbrowse")
-	// build gbrowse command
-	if _, err := run(nil, "go", "build", "-o", cmd); err != nil {
-		t.Fatal(err)
-	}
-	e.dir = dir
-	e.cmd = cmd
 
 	git := filepath.Join(dir, "gbrowse-git")
 	// build gbrowse-git command
-	if _, err := run(nil, "go", "build", "-o", git, "../gbrowse-git"); err != nil {
+	if _, err := run(nil, "go", "build", "-o", git); err != nil {
 		t.Fatal(err)
 	}
+	e.dir = dir
 	e.git = git
 }
 
