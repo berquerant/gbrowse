@@ -17,6 +17,7 @@ type Git interface {
 	HeadObjectName(ctx context.Context) (string, error)
 	ShowPrefix(ctx context.Context) (string, error)
 	RelativePath(ctx context.Context, path string) (string, error)
+	CommitHash(ctx context.Context) (string, error)
 }
 
 type gitImpl struct {
@@ -70,6 +71,10 @@ func (g *gitImpl) ShowPrefix(ctx context.Context) (string, error) {
 
 func (g *gitImpl) RelativePath(ctx context.Context, path string) (string, error) {
 	return g.run(ctx, "ls-files", "--full-name", path)
+}
+
+func (g *gitImpl) CommitHash(ctx context.Context) (string, error) {
+	return g.run(ctx, "rev-parse", "@")
 }
 
 func (g *gitImpl) run(ctx context.Context, arg ...string) (string, error) {

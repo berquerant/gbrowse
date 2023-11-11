@@ -21,6 +21,9 @@ func TestEndToEnd(t *testing.T) {
 		headObjectName  = "head-object"
 		showPrefix      = "show-prefix"
 		relativePath    = "relative-path"
+		describeTag     = "describe-tag"
+		showCurrent     = "show-current"
+		commitHash      = "commit-hash"
 	)
 	envBytes, _ := json.Marshal(map[string]string{
 		"default_branch":    defaultBranch,
@@ -28,6 +31,9 @@ func TestEndToEnd(t *testing.T) {
 		"head_object_name":  headObjectName,
 		"show_prefix":       showPrefix,
 		"relative_path":     relativePath,
+		"describe_tag":      describeTag,
+		"show_current":      showCurrent,
+		"commit_hash":       commitHash,
 	})
 	envSlices := []string{
 		fmt.Sprintf("GBROWSE_GIT=%s", e.git),
@@ -64,6 +70,21 @@ func TestEndToEnd(t *testing.T) {
 				name: "RelativePath",
 				args: []string{"ls-files", "--full-name"},
 				want: relativePath,
+			},
+			{
+				name: "DescribeTag",
+				args: []string{"describe", "--tags", "--abbrev=0"},
+				want: describeTag,
+			},
+			{
+				name: "ShowCurrent",
+				args: []string{"branch", "--show-current"},
+				want: showCurrent,
+			},
+			{
+				name: "CommitHash",
+				args: []string{"rev-parse", "@"},
+				want: commitHash,
 			},
 		} {
 			tc := tc

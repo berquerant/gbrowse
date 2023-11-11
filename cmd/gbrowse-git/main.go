@@ -15,6 +15,9 @@ type config struct {
 	HeadObjectName  string `json:"head_object_name"`
 	ShowPrefix      string `json:"show_prefix"`
 	RelativePath    string `json:"relative_path"`
+	DescribeTag     string `json:"describe_tag"`
+	ShowCurrent     string `json:"show_current"`
+	CommitHash      string `json:"commit_hash"`
 }
 
 func (c *config) intoMappingTuples() mappingTupleList {
@@ -24,6 +27,9 @@ func (c *config) intoMappingTuples() mappingTupleList {
 		newMappingTuple([]string{"rev-parse", "--abbrev-ref", "@"}, c.HeadObjectName),
 		newMappingTuple([]string{"rev-parse", "--show-prefix"}, c.ShowPrefix),
 		newMappingTuple([]string{"ls-files", "--full-name"}, c.RelativePath),
+		newMappingTuple([]string{"describe", "--tags", "--abbrev=0"}, c.DescribeTag),
+		newMappingTuple([]string{"branch", "--show-current"}, c.ShowCurrent),
+		newMappingTuple([]string{"rev-parse", "@"}, c.CommitHash),
 	}
 }
 

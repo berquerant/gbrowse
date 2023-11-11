@@ -45,10 +45,7 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaul
 		}
 		{
 			r, err := func() (string, error) {
-				if defaultBranch {
-					return gitCommand.DefaultBranch(ctx)
-				}
-				return gitCommand.HeadObjectName(ctx)
+				return gitCommand.CommitHash(ctx)
 			}()
 			if err != nil {
 				return err

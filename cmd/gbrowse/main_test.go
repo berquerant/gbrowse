@@ -22,6 +22,7 @@ func TestEndToEnd(t *testing.T) {
 		headObjectName  = "head-object"
 		showPrefix      = "show-prefix"
 		relativePath    = "relative-path"
+		commitHash      = "commit-hash"
 	)
 	envBytes, _ := json.Marshal(map[string]string{
 		"default_branch":    defaultBranch,
@@ -29,6 +30,7 @@ func TestEndToEnd(t *testing.T) {
 		"head_object_name":  headObjectName,
 		"show_prefix":       showPrefix,
 		"relative_path":     relativePath,
+		"commit_hash":       commitHash,
 	})
 	envSlices := []string{
 		fmt.Sprintf("GBROWSE_GIT=%s", e.git),                   // mock git binary
@@ -50,22 +52,22 @@ func TestEndToEnd(t *testing.T) {
 			{
 				name: "root",
 				opt:  []string{"-print"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix}, "/"),
+				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix}, "/"),
 			},
 			{
 				name: "dir",
 				opt:  []string{"-print", "dir"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix, "dir"}, "/"),
+				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix, "dir"}, "/"),
 			},
 			{
 				name: "dir/file",
 				opt:  []string{"-print", "dir/file"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix, "dir/file"}, "/"),
+				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix, "dir/file"}, "/"),
 			},
 			{
 				name: "linum",
 				opt:  []string{"-print", "dir/file:10"},
-				want: strings.Join([]string{remoteOriginURL, "blob", headObjectName, showPrefix, "dir/file#L10"}, "/"),
+				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix, "dir/file#L10"}, "/"),
 			},
 		} {
 			tc := tc
