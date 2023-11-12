@@ -17,6 +17,8 @@ type Git interface {
 	HeadObjectName(ctx context.Context) (string, error)
 	ShowPrefix(ctx context.Context) (string, error)
 	RelativePath(ctx context.Context, path string) (string, error)
+	DescribeTag(ctx context.Context) (string, error)
+	ShowCurrent(ctx context.Context) (string, error)
 	CommitHash(ctx context.Context) (string, error)
 }
 
@@ -71,6 +73,14 @@ func (g *gitImpl) ShowPrefix(ctx context.Context) (string, error) {
 
 func (g *gitImpl) RelativePath(ctx context.Context, path string) (string, error) {
 	return g.run(ctx, "ls-files", "--full-name", path)
+}
+
+func (g *gitImpl) DescribeTag(ctx context.Context) (string, error) {
+	return g.run(ctx, "describe", "--tags", "--abbrev=0")
+}
+
+func (g *gitImpl) ShowCurrent(ctx context.Context) (string, error) {
+	return g.run(ctx, "branch", "--show-current")
 }
 
 func (g *gitImpl) CommitHash(ctx context.Context) (string, error) {

@@ -23,3 +23,7 @@ func SS(key string, value []string) Attr {
 func Err(err error) Attr {
 	return Attr(slog.Any("error", err))
 }
+
+func I(key string, value int) Attr {
+	return Attr(slog.Int(key, value))
+}

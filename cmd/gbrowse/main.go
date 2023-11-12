@@ -4,10 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 
 	"github.com/berquerant/gbrowse/browse"
+	"github.com/berquerant/gbrowse/config"
 	"github.com/berquerant/gbrowse/ctxlog"
 	"github.com/berquerant/gbrowse/env"
 	"github.com/berquerant/gbrowse/git"
@@ -45,6 +47,23 @@ func (c *envConfig) logger() ctxlog.Logger {
 	return ctxlog.New(slog.New(slog.NewJSONHandler(os.Stdout, c.logHandlerOptions())))
 }
 
+func parseConfig(filePath string) (*config.Config, error) {
+	if filePath == "" {
+		return config.Default(), nil
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	return config.Parse(b)
+}
+
 const usage = `gbrowse - Open the repo in the browser
 
 Usage:
@@ -71,16 +90,16 @@ func Usage() {
 
 func main() {
 	var (
-		printOnly     = flag.Bool("print", false, "only print generated url")
-		defaultBranch = flag.Bool("default", false, "use default branch instead of the current branch")
-		config        = newEnvConfig()
-		logger        = config.logger()
+		printOnly  = flag.Bool("print", false, "only print generated url")
+		configFile = flag.String("config", "", "config file")
+		envConfig  = newEnvConfig()
+		logger     = envConfig.logger()
 	)
 
 	flag.Usage = Usage
 	flag.Parse()
 
-	logger.Debug("env", ctxlog.Any("values", config))
+	logger.Debug("env", ctxlog.Any("values", envConfig))
 	flag.VisitAll(func(f *flag.Flag) {
 		logger.Debug("flag",
 			ctxlog.S("tag", f.Name),
@@ -89,11 +108,17 @@ func main() {
 		)
 	})
 
+	config, err := parseConfig(*configFile)
+	if err != nil {
+		logger.Error("parse config", ctxlog.Err(err))
+		os.Exit(int(eFailure))
+	}
+
 	run(ctxlog.With(context.Background(), logger), &args{
-		config:        config,
-		target:        flag.Arg(0),
-		printOnly:     *printOnly,
-		defaultBranch: *defaultBranch,
+		config:    config,
+		envConfig: envConfig,
+		target:    flag.Arg(0),
+		printOnly: *printOnly,
 	}).exit()
 }
 
@@ -109,10 +134,10 @@ func (c exitCode) exit() {
 }
 
 type args struct {
-	config        *envConfig
-	target        string
-	printOnly     bool
-	defaultBranch bool
+	config    *config.Config
+	envConfig *envConfig
+	target    string
+	printOnly bool
 }
 
 func run(ctx context.Context, args *args) exitCode {
@@ -129,11 +154,15 @@ func run(ctx context.Context, args *args) exitCode {
 		return eFailure
 	}
 
+	gitCommand := git.New(git.WithGitCommand(args.envConfig.Git))
+	phaseExecutor := urlx.NewPhaseExecutor(gitCommand)
+
 	targetURL, err := urlx.Build(
 		ctx,
-		git.New(git.WithGitCommand(args.config.Git)),
+		gitCommand,
 		target,
-		urlx.WithDefaultBranch(args.defaultBranch),
+		phaseExecutor,
+		urlx.WithPhases(args.config.Phases),
 	)
 	if err != nil {
 		logger.Error("build url",

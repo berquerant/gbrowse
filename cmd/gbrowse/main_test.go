@@ -12,71 +12,184 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type EnvMap struct {
+	DefaultBranch   string `json:"default_branch"`
+	RemoteOriginURL string `json:"remote_origin_url"`
+	HeadObjectName  string `json:"head_object_name"`
+	ShowPrefix      string `json:"show_prefix"`
+	RelativePath    string `json:"relative_path"`
+	DescribeTag     string `json:"describe_tag"`
+	ShowCurrent     string `json:"show_current"`
+	CommitHash      string `json:"commit_hash"`
+}
+
+func (e *EnvMap) JSON() string {
+	b, _ := json.Marshal(e)
+	return string(b)
+}
+
+func defaultEnvMap() *EnvMap {
+	return &EnvMap{
+		DefaultBranch:   "master",
+		RemoteOriginURL: "remote-origin",
+		HeadObjectName:  "head-object",
+		ShowPrefix:      "show-prefix",
+		RelativePath:    "relative-path",
+		DescribeTag:     "describe-tag",
+		ShowCurrent:     "show-current",
+		CommitHash:      "commit-hash",
+	}
+}
+
 func TestEndToEnd(t *testing.T) {
 	e := newExecutor(t)
 	defer e.close()
-
-	const (
-		defaultBranch   = "master"
-		remoteOriginURL = "remote-origin"
-		headObjectName  = "head-object"
-		showPrefix      = "show-prefix"
-		relativePath    = "relative-path"
-		commitHash      = "commit-hash"
+	var (
+		newEnvSlices = func(envMap *EnvMap) []string {
+			return []string{
+				fmt.Sprintf("GBROWSE_GIT=%s", e.git),                // mock git binary
+				fmt.Sprintf("GBROWSE_GIT_CONFIG=%s", envMap.JSON()), // see cmd/gbrowse-git
+			}
+		}
 	)
-	envBytes, _ := json.Marshal(map[string]string{
-		"default_branch":    defaultBranch,
-		"remote_origin_url": remoteOriginURL,
-		"head_object_name":  headObjectName,
-		"show_prefix":       showPrefix,
-		"relative_path":     relativePath,
-		"commit_hash":       commitHash,
-	})
-	envSlices := []string{
-		fmt.Sprintf("GBROWSE_GIT=%s", e.git),                   // mock git binary
-		fmt.Sprintf("GBROWSE_GIT_CONFIG=%s", string(envBytes)), // see cmd/gbrowse-git
-	}
 
 	t.Run("help", func(t *testing.T) {
+		envSlices := newEnvSlices(defaultEnvMap())
 		output, err := run(envSlices, e.cmd, "-h")
 		assert.Nil(t, err)
 		t.Log(string(output))
 	})
 
 	t.Run("run", func(t *testing.T) {
-		for _, tc := range []struct {
-			name string
-			opt  []string
-			want string
-		}{
-			{
-				name: "root",
-				opt:  []string{"-print"},
-				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix}, "/"),
-			},
-			{
-				name: "dir",
-				opt:  []string{"-print", "dir"},
-				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix, "dir"}, "/"),
-			},
-			{
-				name: "dir/file",
-				opt:  []string{"-print", "dir/file"},
-				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix, "dir/file"}, "/"),
-			},
-			{
-				name: "linum",
-				opt:  []string{"-print", "dir/file:10"},
-				want: strings.Join([]string{remoteOriginURL, "blob", commitHash, showPrefix, "dir/file#L10"}, "/"),
-			},
-		} {
-			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				output, err := run(envSlices, e.cmd, tc.opt...)
-				assert.Nil(t, err)
-				assert.Equal(t, tc.want, string(output))
-			})
-		}
+		tmpDir := t.TempDir()
+
+		t.Run("config", func(t *testing.T) {
+			envs := defaultEnvMap()
+
+			for _, tc := range []struct {
+				title  string
+				envs   func(*EnvMap)
+				config string
+				opt    []string
+				want   string
+			}{
+				{
+					title:  "empty",
+					config: `{}`,
+					opt:    []string{"dir"},
+					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title:  "commit",
+					config: `{"phases":["commit"]}`,
+					opt:    []string{"dir"},
+					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title:  "default branch",
+					config: `{"phases":["default_branch"]}`,
+					opt:    []string{"dir"},
+					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title:  "branch ignore HEAD",
+					config: `{"phases":["branch"]}`,
+					envs: func(e *EnvMap) {
+						e.HeadObjectName = "HEAD"
+					},
+					opt:  []string{"dir"},
+					want: strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title:  "branch",
+					config: `{"phases":["branch"]}`,
+					opt:    []string{"dir"},
+					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.HeadObjectName, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title:  "tag ignored wen not detacjed HEAD",
+					config: `{"phases":["tag"]}`,
+					opt:    []string{"dir"},
+					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title:  "tag",
+					config: `{"phases":["tag"]}`,
+					envs: func(e *EnvMap) {
+						e.ShowCurrent = ""
+					},
+					opt:  []string{"dir"},
+					want: strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DescribeTag, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title:  "fallback",
+					config: `{"phases":["tag","default_branch"]}`,
+					opt:    []string{"dir"},
+					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix, "dir"}, "/"),
+				},
+			} {
+				tc := tc
+				t.Run(tc.title, func(t *testing.T) {
+					envs := defaultEnvMap()
+					if tc.envs != nil {
+						tc.envs(envs)
+					}
+					envSlices := newEnvSlices(envs)
+					configFile, err := os.CreateTemp(tmpDir, "")
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer configFile.Close()
+					if _, err := fmt.Fprint(configFile, tc.config); err != nil {
+						t.Fatal(err)
+					}
+
+					opt := append([]string{"-print", "-config", configFile.Name()}, tc.opt...)
+					output, err := run(envSlices, e.cmd, opt...)
+					assert.Nil(t, err)
+					assert.Equal(t, tc.want, string(output))
+				})
+			}
+		})
+
+		t.Run("default", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := newEnvSlices(envs)
+
+			for _, tc := range []struct {
+				name string
+				opt  []string
+				want string
+			}{
+				{
+					name: "root",
+					opt:  []string{"-print"},
+					want: strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix}, "/"),
+				},
+				{
+					name: "dir",
+					opt:  []string{"-print", "dir"},
+					want: strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					name: "dir/file",
+					opt:  []string{"-print", "dir/file"},
+					want: strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir/file"}, "/"),
+				},
+				{
+					name: "linum",
+					opt:  []string{"-print", "dir/file:10"},
+					want: strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir/file#L10"}, "/"),
+				},
+			} {
+				tc := tc
+				t.Run(tc.name, func(t *testing.T) {
+					output, err := run(envSlices, e.cmd, tc.opt...)
+					assert.Nil(t, err)
+					assert.Equal(t, tc.want, string(output))
+				})
+			}
+		})
 	})
 
 }

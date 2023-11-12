@@ -6,30 +6,34 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/berquerant/gbrowse/config"
 	"github.com/berquerant/gbrowse/git"
 	"github.com/berquerant/gbrowse/parse"
 )
 
-//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "DefaultBranch bool" -option -output config_generated.go
+//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "Phases []config.Phase" -option -output config_generated.go
 
 // Build assembles url from repository and specified path.
-func Build(ctx context.Context, gitCommand git.Git, target *parse.Target, opt ...ConfigOption) (string, error) {
+func Build(ctx context.Context, gitCommand git.Git, target *parse.Target, executor PhaseExecutor, opt ...ConfigOption) (string, error) {
 	config := NewConfigBuilder().
-		DefaultBranch(false).
+		Phases([]config.Phase{}).
 		Build()
 	config.Apply(opt...)
 
-	u, err := build(ctx, gitCommand, target, config.DefaultBranch.Get())
+	doPhases := func(ctx context.Context) (string, error) {
+		return ExecutePhases(ctx, config.Phases.Get(), executor)
+	}
+	u, err := build(ctx, gitCommand, target, doPhases)
 	if err != nil {
 		return "", fmt.Errorf("failed to build url: %w", err)
 	}
 	return u, nil
 }
 
-func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaultBranch bool) (string, error) {
+func build(ctx context.Context, gitCommand git.Git, target *parse.Target, doPhases func(context.Context) (string, error)) (string, error) {
 	type result struct {
 		repoURL  string
-		branch   string
+		ref      string
 		path     string
 		fragment string
 	}
@@ -44,13 +48,11 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaul
 			res.repoURL = parse.ReadRepoURL(r)
 		}
 		{
-			r, err := func() (string, error) {
-				return gitCommand.CommitHash(ctx)
-			}()
+			r, err := doPhases(ctx)
 			if err != nil {
 				return err
 			}
-			res.branch = r
+			res.ref = r
 		}
 		{
 			if isDir, err := isDirectory(target.Path()); err != nil || isDir {
@@ -78,7 +80,7 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target, defaul
 	}
 
 	return fmt.Sprintf("%s/blob/%s/%s%s",
-		res.repoURL, res.branch, res.path, res.fragment,
+		res.repoURL, res.ref, res.path, res.fragment,
 	), nil
 }
 
