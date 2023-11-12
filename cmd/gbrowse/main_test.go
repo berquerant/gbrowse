@@ -63,6 +63,31 @@ func TestEndToEnd(t *testing.T) {
 	t.Run("run", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
+		t.Run("config flag overwride env", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := append(
+				newEnvSlices(envs),
+				`GBROWSE_CONFIG={"phases":["commit"]}`,
+			)
+
+			want := strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix}, "/")
+			output, err := run(envSlices, e.cmd, "-print", "-config", `{"phases":["default_branch"]}`)
+			assert.Nil(t, err)
+			assert.Equal(t, want, string(output))
+		})
+
+		t.Run("config env", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := append(
+				newEnvSlices(envs),
+				`GBROWSE_CONFIG={"phases":["default_branch"]}`,
+			)
+			want := strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix}, "/")
+			output, err := run(envSlices, e.cmd, "-print")
+			assert.Nil(t, err)
+			assert.Equal(t, want, string(output))
+		})
+
 		t.Run("config", func(t *testing.T) {
 			envs := defaultEnvMap()
 

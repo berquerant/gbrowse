@@ -1,6 +1,6 @@
 package ctxlog
 
-import "golang.org/x/exp/slog"
+import "log/slog"
 
 type Attr slog.Attr
 

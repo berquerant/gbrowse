@@ -4,65 +4,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"os/signal"
 
 	"github.com/berquerant/gbrowse/browse"
-	"github.com/berquerant/gbrowse/config"
 	"github.com/berquerant/gbrowse/ctxlog"
-	"github.com/berquerant/gbrowse/env"
 	"github.com/berquerant/gbrowse/git"
 	"github.com/berquerant/gbrowse/parse"
 	"github.com/berquerant/gbrowse/urlx"
-	"golang.org/x/exp/slog"
 )
-
-type envConfig struct {
-	Git     string
-	IsDebug bool
-}
-
-func newEnvConfig() *envConfig {
-	var c envConfig
-	c.Git = env.GetOr("GBROWSE_GIT", "git")
-	c.IsDebug = env.GetOr("GBROWSE_DEBUG", "") != ""
-	return &c
-}
-
-func (c *envConfig) logLevel() slog.Level {
-	if c.IsDebug {
-		return slog.LevelDebug
-	}
-	return slog.LevelInfo
-}
-
-func (c *envConfig) logHandlerOptions() *slog.HandlerOptions {
-	return &slog.HandlerOptions{
-		Level: c.logLevel(),
-	}
-}
-
-func (c *envConfig) logger() ctxlog.Logger {
-	return ctxlog.New(slog.New(slog.NewJSONHandler(os.Stdout, c.logHandlerOptions())))
-}
-
-func parseConfig(filePath string) (*config.Config, error) {
-	if filePath == "" {
-		return config.Default(), nil
-	}
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-	return config.Parse(b)
-}
 
 const usage = `gbrowse - Open the repo in the browser
 
@@ -74,12 +24,28 @@ Usage:
   gbrowse FILE:LINUM opens the line LINUM of the FILE of the repo.
   gbrowse opens the directory of the repo.
 
+Config:
+
+  {
+    "phases": [
+      PHASE, ...
+    ]
+  }
+
+phases determines the search order for ref (commit, branch, tag).
+PHASE is branch, default_branch, tag or commit.
+If all searches fail, search commit.
+
 Environment variables:
   GBROWSE_GIT
     git command, default is git.
 
   GBROWSE_DEBUG
     enable debug log if set.
+
+  GBROWSE_CONFIG
+    config file or string.
+    -config overwrites this.
 
 Flags:`
 
@@ -90,10 +56,10 @@ func Usage() {
 
 func main() {
 	var (
-		printOnly  = flag.Bool("print", false, "only print generated url")
-		configFile = flag.String("config", "", "config file")
-		envConfig  = newEnvConfig()
-		logger     = envConfig.logger()
+		printOnly    = flag.Bool("print", false, "only print generated url")
+		configOrFile = flag.String("config", "", "config or file")
+		envConfig    = newEnvConfig()
+		logger       = envConfig.logger()
 	)
 
 	flag.Usage = Usage
@@ -108,17 +74,11 @@ func main() {
 		)
 	})
 
-	config, err := parseConfig(*configFile)
-	if err != nil {
-		logger.Error("parse config", ctxlog.Err(err))
-		os.Exit(int(eFailure))
-	}
-
 	run(ctxlog.With(context.Background(), logger), &args{
-		config:    config,
-		envConfig: envConfig,
-		target:    flag.Arg(0),
-		printOnly: *printOnly,
+		configOrFile: *configOrFile,
+		envConfig:    envConfig,
+		target:       flag.Arg(0),
+		printOnly:    *printOnly,
 	}).exit()
 }
 
@@ -134,10 +94,10 @@ func (c exitCode) exit() {
 }
 
 type args struct {
-	config    *config.Config
-	envConfig *envConfig
-	target    string
-	printOnly bool
+	configOrFile string
+	envConfig    *envConfig
+	target       string
+	printOnly    bool
 }
 
 func run(ctx context.Context, args *args) exitCode {
@@ -145,6 +105,8 @@ func run(ctx context.Context, args *args) exitCode {
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
+
+	config := parseConfig(args.envConfig.Config, args.configOrFile)
 
 	target, err := parse.ReadTarget(args.target)
 	if err != nil {
@@ -162,7 +124,7 @@ func run(ctx context.Context, args *args) exitCode {
 		gitCommand,
 		target,
 		phaseExecutor,
-		urlx.WithPhases(args.config.Phases),
+		urlx.WithPhases(config.Phases),
 	)
 	if err != nil {
 		logger.Error("build url",
