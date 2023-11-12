@@ -54,4 +54,18 @@ func TestParseStringOrFile(t *testing.T) {
 		}
 		assert.Equal(t, want, config.ParseStringOrFile(`{"phases":["commit"]}`, origin))
 	})
+
+	t.Run("phases and defs", func(t *testing.T) {
+		want := config.Default()
+		want.Phases = []config.Phase{
+			config.NewPhase("custom"),
+		}
+		want.Definitions = []config.Definition{
+			{
+				ID:      "custom",
+				Command: []string{"pwd"},
+			},
+		}
+		assert.Equal(t, want, config.ParseStringOrFile(`{"phases":["custom"],"defs":[{"id":"custom","cmd":["pwd"]}]}`, nil))
+	})
 }

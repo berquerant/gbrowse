@@ -63,6 +63,18 @@ func TestEndToEnd(t *testing.T) {
 	t.Run("run", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
+		t.Run("config custom", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := newEnvSlices(envs)
+			// run gbrowse-git branch --show-current as custom phase
+			configTemplate := `{"phases":["custom"],"defs":[{"id":"custom","cmd":["%s","branch","--show-current"]}]}`
+			config := fmt.Sprintf(configTemplate, e.git)
+			want := strings.Join([]string{envs.RemoteOriginURL, "blob", envs.ShowCurrent, envs.ShowPrefix}, "/")
+			output, err := run(envSlices, e.cmd, "-print", "-config", config)
+			assert.Nil(t, err)
+			assert.Equal(t, want, string(output))
+		})
+
 		t.Run("config flag overwride env", func(t *testing.T) {
 			envs := defaultEnvMap()
 			envSlices := append(

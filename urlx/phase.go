@@ -23,6 +23,7 @@ func ExecutePhases(ctx context.Context, phases []config.Phase, executor PhaseExe
 		if err == nil {
 			return r, nil
 		}
+		logger.Debug("phase", ctxlog.I("index", i), ctxlog.Err(err))
 		retErr = errors.Join(retErr, fmt.Errorf("%w: phase[%d] %s", err, i, p))
 	}
 	return "", retErr
@@ -32,14 +33,16 @@ type PhaseExecutor interface {
 	Execute(ctx context.Context, phase config.Phase) (string, error)
 }
 
-func NewPhaseExecutor(gitCommand git.Git) PhaseExecutor {
+func NewPhaseExecutor(gitCommand git.Git, customExecutor CustomPhaseExecutor) PhaseExecutor {
 	return &phaseExecutor{
-		gitCommand: gitCommand,
+		gitCommand:     gitCommand,
+		customExecutor: customExecutor,
 	}
 }
 
 type phaseExecutor struct {
-	gitCommand git.Git
+	gitCommand     git.Git
+	customExecutor CustomPhaseExecutor
 }
 
 var (
@@ -82,5 +85,5 @@ func (e *phaseExecutor) executeBuiltin(ctx context.Context, phase config.Phase) 
 }
 
 func (e *phaseExecutor) executeCustom(ctx context.Context, phase config.Phase) (string, error) {
-	return "", errors.New("Unimplemented: custom phase")
+	return e.customExecutor.Execute(ctx, phase.String())
 }

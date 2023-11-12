@@ -2,6 +2,7 @@ package urlx_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/berquerant/gbrowse/config"
@@ -42,8 +43,25 @@ func (g *mockGit) CommitHash(ctx context.Context) (string, error) {
 	return g.commitHash, nil
 }
 
+type mockCustomPhaseExecutor struct {
+	id     string
+	result string
+}
+
+func (c *mockCustomPhaseExecutor) Execute(_ context.Context, id string) (string, error) {
+	if id == c.id {
+		return c.result, nil
+	}
+	return "", errors.New("mock custom")
+}
+
 func TestPhaseExecutor(t *testing.T) {
-	t.Run("buildin", func(t *testing.T) {
+	t.Run("builtin", func(t *testing.T) {
+		const (
+			customID     = "custom-id"
+			customResult = "custom-result"
+		)
+
 		for _, tc := range []struct {
 			title      string
 			phase      config.Phase
@@ -100,10 +118,18 @@ func TestPhaseExecutor(t *testing.T) {
 				},
 				want: "mycommit",
 			},
+			{
+				title: "custom",
+				phase: config.NewPhase(customID),
+				want:  customResult,
+			},
 		} {
 			tc := tc
 			t.Run(tc.title, func(t *testing.T) {
-				p := urlx.NewPhaseExecutor(tc.gitCommand)
+				p := urlx.NewPhaseExecutor(tc.gitCommand, &mockCustomPhaseExecutor{
+					id:     customID,
+					result: customResult,
+				})
 				got, err := p.Execute(context.TODO(), tc.phase)
 				if tc.err != nil {
 					assert.ErrorIs(t, err, tc.err)

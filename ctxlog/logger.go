@@ -13,7 +13,7 @@ var ctxKeyValue ctxKey = "ctxKeyValue"
 // From finds Logger from context.
 func From(ctx context.Context) Logger {
 	val := ctx.Value(ctxKeyValue)
-	instance, _ := val.(Logger)
+	instance, _ := val.(*logger)
 	return instance
 }
 
@@ -40,9 +40,6 @@ type logger struct {
 }
 
 func (l *logger) logAttrs(level slog.Level, msg string, attrs ...Attr) {
-	if l.isNil() {
-		return
-	}
 	sAttrs := make([]slog.Attr, len(attrs))
 	for i, attr := range attrs {
 		sAttrs[i] = slog.Attr(attr)
@@ -51,17 +48,22 @@ func (l *logger) logAttrs(level slog.Level, msg string, attrs ...Attr) {
 }
 
 func (l *logger) Info(msg string, attrs ...Attr) {
+	if l == nil || l.l == nil {
+		return
+	}
 	l.logAttrs(slog.LevelInfo, msg, attrs...)
 }
 
 func (l *logger) Error(msg string, attrs ...Attr) {
+	if l == nil || l.l == nil {
+		return
+	}
 	l.logAttrs(slog.LevelError, msg, attrs...)
 }
 
 func (l *logger) Debug(msg string, attrs ...Attr) {
+	if l == nil || l.l == nil {
+		return
+	}
 	l.logAttrs(slog.LevelDebug, msg, attrs...)
-}
-
-func (l *logger) isNil() bool {
-	return l == nil || l.l == nil
 }

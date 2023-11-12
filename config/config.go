@@ -54,12 +54,19 @@ func ParseStringOrFile(b string, c *Config) *Config {
 }
 
 type Config struct {
-	Phases []Phase `json:"phases,omitempty"`
+	Phases      []Phase      `json:"phases,omitempty"`
+	Definitions []Definition `json:"defs,omitempty"`
+}
+
+type Definition struct {
+	ID      string   `json:"id"`
+	Command []string `json:"cmd"`
 }
 
 type Phase string
 
-func (p Phase) String() string { return string(p) }
+func NewPhase(value string) Phase { return Phase(value) }
+func (p Phase) String() string    { return string(p) }
 
 const (
 	Punknown       = "unknown"
@@ -68,12 +75,3 @@ const (
 	Ptag           = "tag"
 	Pcommit        = "commit"
 )
-
-func NewPhase(value string) Phase {
-	switch value {
-	case Pbranch, PdefaultBranch, Ptag, Pcommit:
-		return Phase(value)
-	default:
-		return Punknown
-	}
-}

@@ -17,11 +17,26 @@ Config:
   {
     "phases": [
       PHASE, ...
+    ],
+    "defs": [
+      {
+        "id": ID,
+        "cmd": ["command", ...]
+      }, ...
     ]
   }
 
 phases determines the search order for ref (commit, branch, tag).
-PHASE is branch, default_branch, tag or commit.
+PHASE is branch, default_branch, tag, commit or id in def.
+defs is custom phases, cmd should return a string like commit hash, for example,
+
+  {
+    "phases": ["echo-master"],
+    "defs": [{"id": "echo-master", "cmd": ["echo", "master"]}]
+  }
+
+sets ref to "master".
+
 If all searches fail, search commit.
 
 Environment variables:
