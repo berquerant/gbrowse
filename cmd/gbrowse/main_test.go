@@ -129,6 +129,11 @@ func TestEndToEnd(t *testing.T) {
 					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix, "dir"}, "/"),
 				},
 				{
+					title: "default branch by -phase",
+					opt:   []string{"-phase", "default_branch", "dir"},
+					want:  strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
 					title:  "branch ignore HEAD",
 					config: `{"phases":["branch"]}`,
 					envs: func(e *EnvMap) {
@@ -163,6 +168,11 @@ func TestEndToEnd(t *testing.T) {
 					config: `{"phases":["tag","default_branch"]}`,
 					opt:    []string{"dir"},
 					want:   strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix, "dir"}, "/"),
+				},
+				{
+					title: "fallback by -phase",
+					opt:   []string{"-phase", "tag,default_branch", "dir"},
+					want:  strings.Join([]string{envs.RemoteOriginURL, "blob", envs.DefaultBranch, envs.ShowPrefix, "dir"}, "/"),
 				},
 			} {
 				tc := tc

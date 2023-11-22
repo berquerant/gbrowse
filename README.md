@@ -36,6 +36,7 @@ defs is custom phases, cmd should return a string like commit hash, for example,
   }
 
 sets ref to "master".
+PHASE can also be specified by -phase flag.
 
 If all searches fail, search commit.
 

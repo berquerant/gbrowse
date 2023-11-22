@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/berquerant/gbrowse/browse"
+	"github.com/berquerant/gbrowse/config"
 	"github.com/berquerant/gbrowse/ctxlog"
 	"github.com/berquerant/gbrowse/git"
 	"github.com/berquerant/gbrowse/parse"
@@ -48,6 +50,7 @@ defs is custom phases, cmd should return a string like commit hash, for example,
   }
 
 sets ref to "master".
+PHASE can also be specified by -phase flag.
 
 If all searches fail, search commit.
 
@@ -73,9 +76,18 @@ func main() {
 	var (
 		printOnly    = flag.Bool("print", false, "only print generated url")
 		configOrFile = flag.String("config", "", "config or file")
+		phases       []config.Phase
 		envConfig    = newEnvConfig()
 		logger       = envConfig.logger()
 	)
+	flag.Func("phase", "phases separated by comma", func(s string) error {
+		ss := strings.Split(s, ",")
+		phases = make([]config.Phase, len(ss))
+		for i, x := range ss {
+			phases[i] = config.NewPhase(x)
+		}
+		return nil
+	})
 
 	flag.Usage = Usage
 	flag.Parse()
@@ -92,6 +104,7 @@ func main() {
 	run(ctxlog.With(context.Background(), logger), &args{
 		configOrFile: *configOrFile,
 		envConfig:    envConfig,
+		phases:       phases,
 		target:       flag.Arg(0),
 		printOnly:    *printOnly,
 	}).exit()
@@ -111,6 +124,7 @@ func (c exitCode) exit() {
 type args struct {
 	configOrFile string
 	envConfig    *envConfig
+	phases       []config.Phase
 	target       string
 	printOnly    bool
 }
@@ -122,6 +136,9 @@ func run(ctx context.Context, args *args) exitCode {
 	defer stop()
 
 	config := parseConfig(args.envConfig.Config, args.configOrFile)
+	if len(args.phases) > 0 {
+		config.Phases = args.phases
+	}
 
 	target, err := parse.ReadTarget(args.target)
 	if err != nil {
