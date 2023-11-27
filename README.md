@@ -53,7 +53,9 @@ Environment variables:
 
 Flags:
   -config string
-        config or file
+    	config or file
+  -phase value
+    	phases separated by comma
   -print
-        only print generated url
+    	only print generated url
 ```
