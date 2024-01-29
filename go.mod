@@ -4,7 +4,7 @@ go 1.21.4
 
 require (
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/vuln v1.0.2
+	golang.org/x/vuln v1.0.3
 )
 
 require (
