@@ -25,6 +25,7 @@ func Run(ctx context.Context, command string, arg ...string) (result string, ret
 		}
 	)
 
+	cmd.Env = execx.EnvFromEnviron()
 	r, err := cmd.Run(ctx)
 	if err != nil {
 		retErr = genErr(err)
