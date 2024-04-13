@@ -139,6 +139,11 @@ func run(ctx context.Context, args *args) exitCode {
 	if len(args.phases) > 0 {
 		config.Phases = args.phases
 	}
+	logger.Debug("config",
+		ctxlog.Any("parsed", config),
+		ctxlog.S("env", args.envConfig.Config),
+		ctxlog.S("value", args.configOrFile),
+	)
 
 	target, err := parse.ReadTarget(args.target)
 	if err != nil {
