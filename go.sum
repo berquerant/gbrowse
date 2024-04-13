@@ -1,3 +1,5 @@
+github.com/berquerant/execx v0.0.0-20240413045325-ad96893f97d3 h1:IsUi3a+neQO98IeUGtXNmeK7OTvQXQVGDQySO2LA0qQ=
+github.com/berquerant/execx v0.0.0-20240413045325-ad96893f97d3/go.mod h1:hH8WKmZYJwpPfPaVSgLFPWgtd3pVCbbPDaXx9aHnmh8=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/go-cmdtest v0.4.1-0.20220921163831-55ab3332a786 h1:rcv+Ippz6RAtvaGgKxc+8FQIpxHgsF+HBzPyYL2cyVU=
