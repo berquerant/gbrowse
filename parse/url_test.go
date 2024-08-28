@@ -23,6 +23,11 @@ func TestReadRepoUrl(t *testing.T) {
 			value: "git@gitlab.com:foo/group/repo.git",
 			want:  "https://gitlab.com/foo/group/repo",
 		},
+		{
+			title: "ssh+git",
+			value: "ssh://git@github.com/berquerant/rpath.git",
+			want:  "https://github.com/berquerant/rpath",
+		},
 	} {
 		tc := tc
 		t.Run(tc.title, func(t *testing.T) {

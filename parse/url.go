@@ -26,6 +26,10 @@ func ReadRepoURL(value string) string {
 			from: "https///",
 			to:   "https://",
 		},
+		{
+			from: "ssh///https:",
+			to:   "https:",
+		},
 	}
 
 	for _, t := range replaceTuples {
