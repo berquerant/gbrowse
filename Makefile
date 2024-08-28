@@ -33,15 +33,3 @@ vuln:
 .PHONY: vet
 vet:
 	go vet ./...
-
-DOCKER_RUN = docker run --rm -v "$(ROOT)":/usr/src/myapp -w /usr/src/myapp
-DOCKER_GO_IMAGE = golang:1.21
-DOCKER_LINT_IMAGE = golangci/golangci-lint:v1.54.2
-
-.PHONY: docker-test
-docker-test:
-	$(DOCKER_RUN) $(DOCKER_GO_IMAGE) $(GOTEST) ./...
-
-.PHONY: docker-dist
-docker-dist:
-	$(DOCKER_RUN) $(DOCKER_GO_IMAGE) $(GOBUILD) -o $(BIN) $(CMD)
