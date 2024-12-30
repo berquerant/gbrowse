@@ -1,6 +1,7 @@
 module github.com/berquerant/gbrowse
 
-go 1.21.4
+go 1.23.3
+
 toolchain go1.23.4
 
 require (
