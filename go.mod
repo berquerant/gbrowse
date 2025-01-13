@@ -5,7 +5,7 @@ go 1.23.3
 toolchain go1.23.4
 
 require (
-	github.com/berquerant/execx v0.7.0
+	github.com/berquerant/execx v0.8.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/vuln v1.1.3
 )

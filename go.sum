@@ -1,5 +1,5 @@
-github.com/berquerant/execx v0.7.0 h1:V4YnC75PcgnJc3ZSmyzSGfz9hjDIdafjnIpv7HzELao=
-github.com/berquerant/execx v0.7.0/go.mod h1:bemUZeJh8eEAbztIAyShXv/4w4rX43M/7QSXidtBohA=
+github.com/berquerant/execx v0.8.0 h1:w2uQyBs2JQCVpm7RmFrR6t3Yi9rBWHR/DWQDQUfBk5U=
+github.com/berquerant/execx v0.8.0/go.mod h1:bemUZeJh8eEAbztIAyShXv/4w4rX43M/7QSXidtBohA=
 github.com/berquerant/goconfig v0.3.0 h1:ZE06HPp8aoXcdaNBWr3YsnMokfl5BBV4J0OHha5E8E0=
 github.com/berquerant/goconfig v0.3.0/go.mod h1:4fY4lQ98iRSU8Rn4huI7334mlVS46rAHjrAVfonzGzs=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
