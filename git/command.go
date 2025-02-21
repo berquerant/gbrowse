@@ -8,7 +8,7 @@ import (
 	"github.com/berquerant/gbrowse/execx"
 )
 
-//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "GitCommand string" -option -output config_generated.go
+//go:generate go tool goconfig -field "GitCommand string" -option -output config_generated.go
 
 // Git is git runner.
 type Git interface {

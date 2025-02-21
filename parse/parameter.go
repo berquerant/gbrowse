@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-//go:generate go run github.com/berquerant/dataclass@v0.3.0 -type "InternalTarget" -field "Path string|Linum int" -output parameter_dataclass_generated.go
+//go:generate go tool dataclass -type "InternalTarget" -field "Path string|Linum int" -output parameter_dataclass_generated.go
 
 type Target struct {
 	value InternalTarget

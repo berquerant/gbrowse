@@ -11,7 +11,7 @@ import (
 	"github.com/berquerant/gbrowse/parse"
 )
 
-//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "Phases []config.Phase" -option -output config_generated.go
+//go:generate go tool goconfig -field "Phases []config.Phase" -option -output config_generated.go
 
 // Build assembles url from repository and specified path.
 func Build(ctx context.Context, gitCommand git.Git, target *parse.Target, executor PhaseExecutor, opt ...ConfigOption) (string, error) {
