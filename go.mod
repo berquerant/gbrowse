@@ -3,7 +3,7 @@ module github.com/berquerant/gbrowse
 go 1.24.0
 
 require (
-	github.com/berquerant/execx v0.9.0
+	github.com/berquerant/execx v0.11.0
 	github.com/stretchr/testify v1.10.0
 )
 
