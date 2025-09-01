@@ -4,7 +4,7 @@ go 1.24.4
 
 require (
 	github.com/berquerant/execx v0.12.0
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
