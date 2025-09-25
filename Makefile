@@ -1,6 +1,6 @@
 GOMOD = go mod
 GOBUILD = go build -trimpath -race -v
-GOTEST = go test -v -cover -race
+GOTEST = go test -cover -race
 
 ROOT = $(shell git rev-parse --show-toplevel)
 BIN = dist/gbrowse

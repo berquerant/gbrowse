@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 
 	"github.com/berquerant/gbrowse/browse"
-	"github.com/berquerant/gbrowse/config"
 	"github.com/berquerant/gbrowse/ctxlog"
 	"github.com/berquerant/gbrowse/git"
 	"github.com/berquerant/gbrowse/parse"
@@ -26,44 +24,12 @@ Usage:
   gbrowse FILE:LINUM opens the line LINUM of the FILE of the repo.
   gbrowse opens the directory of the repo.
 
-Config:
-
-  {
-    "phases": [
-      PHASE, ...
-    ],
-    "defs": [
-      {
-        "id": ID,
-        "cmd": ["command", ...]
-      }, ...
-    ]
-  }
-
-phases determines the search order for ref (commit, branch, tag).
-PHASE is branch, default_branch, tag, commit or id in def.
-defs is custom phases, cmd should return a string like commit hash, for example,
-
-  {
-    "phases": ["echo-master"],
-    "defs": [{"id": "echo-master", "cmd": ["echo", "master"]}]
-  }
-
-sets ref to "master".
-PHASE can also be specified by -phase flag.
-
-If all searches fail, search commit.
-
 Environment variables:
   GBROWSE_GIT
     git command, default is git.
 
   GBROWSE_DEBUG
     enable debug log if set.
-
-  GBROWSE_CONFIG
-    config file or string.
-    -config overwrites this.
 
 Flags:`
 
@@ -74,20 +40,10 @@ func Usage() {
 
 func main() {
 	var (
-		printOnly    = flag.Bool("print", false, "only print generated url")
-		configOrFile = flag.String("config", "", "config or file")
-		phases       []config.Phase
-		envConfig    = newEnvConfig()
-		logger       = envConfig.logger()
+		printOnly = flag.Bool("print", false, "only print generated url")
+		envConfig = newEnvConfig()
+		logger    = envConfig.logger()
 	)
-	flag.Func("phase", "phases separated by comma", func(s string) error {
-		ss := strings.Split(s, ",")
-		phases = make([]config.Phase, len(ss))
-		for i, x := range ss {
-			phases[i] = config.NewPhase(x)
-		}
-		return nil
-	})
 
 	flag.Usage = Usage
 	flag.Parse()
@@ -102,11 +58,9 @@ func main() {
 	})
 
 	run(ctxlog.With(context.Background(), logger), &args{
-		configOrFile: *configOrFile,
-		envConfig:    envConfig,
-		phases:       phases,
-		target:       flag.Arg(0),
-		printOnly:    *printOnly,
+		envConfig: envConfig,
+		target:    flag.Arg(0),
+		printOnly: *printOnly,
 	}).exit()
 }
 
@@ -122,11 +76,9 @@ func (c exitCode) exit() {
 }
 
 type args struct {
-	configOrFile string
-	envConfig    *envConfig
-	phases       []config.Phase
-	target       string
-	printOnly    bool
+	envConfig *envConfig
+	target    string
+	printOnly bool
 }
 
 func run(ctx context.Context, args *args) exitCode {
@@ -134,17 +86,6 @@ func run(ctx context.Context, args *args) exitCode {
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
-
-	config := parseConfig(args.envConfig.Config, args.configOrFile)
-	if len(args.phases) > 0 {
-		config.Phases = args.phases
-	}
-	logger.Debug("config",
-		ctxlog.Any("parsed", config),
-		ctxlog.S("env", args.envConfig.Config),
-		ctxlog.S("value", args.configOrFile),
-	)
-
 	target, err := parse.ReadTarget(args.target)
 	if err != nil {
 		logger.Error("parse target",
@@ -154,15 +95,10 @@ func run(ctx context.Context, args *args) exitCode {
 	}
 
 	gitCommand := git.New(git.WithGitCommand(args.envConfig.Git))
-	customExecutor := urlx.NewCustomPhaseExecutor(config.Definitions)
-	phaseExecutor := urlx.NewPhaseExecutor(gitCommand, customExecutor)
-
 	targetURL, err := urlx.Build(
 		ctx,
 		gitCommand,
 		target,
-		phaseExecutor,
-		urlx.WithPhases(config.Phases),
 	)
 	if err != nil {
 		logger.Error("build url",

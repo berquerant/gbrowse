@@ -6,73 +6,45 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/berquerant/gbrowse/config"
 	"github.com/berquerant/gbrowse/git"
 	"github.com/berquerant/gbrowse/parse"
 )
 
-//go:generate go tool goconfig -field "Phases []config.Phase" -option -output config_generated.go
-
 // Build assembles url from repository and specified path.
-func Build(ctx context.Context, gitCommand git.Git, target *parse.Target, executor PhaseExecutor, opt ...ConfigOption) (string, error) {
-	config := NewConfigBuilder().
-		Phases([]config.Phase{}).
-		Build()
-	config.Apply(opt...)
-
-	doPhases := func(ctx context.Context) (string, error) {
-		return ExecutePhases(ctx, config.Phases.Get(), executor)
-	}
-	u, err := build(ctx, gitCommand, target, doPhases)
+func Build(ctx context.Context, gitCommand git.Git, target *parse.Target) (string, error) {
+	u, err := build(ctx, gitCommand, target)
 	if err != nil {
 		return "", fmt.Errorf("failed to build url: %w", err)
 	}
 	return u, nil
 }
 
-func build(ctx context.Context, gitCommand git.Git, target *parse.Target, doPhases func(context.Context) (string, error)) (string, error) {
-	type result struct {
+func build(ctx context.Context, gitCommand git.Git, target *parse.Target) (string, error) {
+	var (
 		repoURL  string
 		ref      string
 		path     string
 		fragment string
-	}
-	var res result
-
+	)
 	if err := func() error {
-		{
-			r, err := gitCommand.RemoteOriginURL(ctx)
+		var err error
+		if repoURL, err = gitCommand.RemoteOriginURL(ctx); err != nil {
+			return err
+		}
+		if ref, err = gitCommand.CommitHash(ctx); err != nil {
+			return err
+		}
+		if isDir, err := isDirectory(target.Path()); err != nil || isDir {
+			r, err := gitCommand.ShowPrefix(ctx)
 			if err != nil {
 				return err
 			}
-			res.repoURL = parse.ReadRepoURL(r)
+			path = filepath.Join(r, target.Path())
+		} else if path, err = gitCommand.RelativePath(ctx, target.Path()); err != nil {
+			return err
 		}
-		{
-			r, err := doPhases(ctx)
-			if err != nil {
-				return err
-			}
-			res.ref = r
-		}
-		{
-			if isDir, err := isDirectory(target.Path()); err != nil || isDir {
-				r, err := gitCommand.ShowPrefix(ctx)
-				if err != nil {
-					return err
-				}
-				res.path = filepath.Join(r, target.Path())
-			} else {
-				r, err := gitCommand.RelativePath(ctx, target.Path())
-				if err != nil {
-					return err
-				}
-				res.path = r
-			}
-		}
-		{
-			if linum, ok := target.Linum(); ok {
-				res.fragment = fmt.Sprintf("#L%d", linum)
-			}
+		if linum, ok := target.Linum(); ok {
+			fragment = fmt.Sprintf("#L%d", linum)
 		}
 		return nil
 	}(); err != nil {
@@ -80,7 +52,7 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target, doPhas
 	}
 
 	return fmt.Sprintf("%s/blob/%s/%s%s",
-		res.repoURL, res.ref, res.path, res.fragment,
+		repoURL, ref, path, fragment,
 	), nil
 }
 
