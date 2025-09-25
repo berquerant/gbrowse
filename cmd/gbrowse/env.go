@@ -15,8 +15,8 @@ type envConfig struct {
 
 func newEnvConfig() *envConfig {
 	var c envConfig
-	c.Git = env.GetOr("GBROWSE_GIT", "git")
-	c.IsDebug = env.GetOr("GBROWSE_DEBUG", "") != ""
+	c.Git = env.GetOr("GIT", "git")
+	c.IsDebug = env.GetOr("DEBUG", "") != ""
 	return &c
 }
 

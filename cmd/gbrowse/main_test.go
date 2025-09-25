@@ -47,7 +47,7 @@ func TestEndToEnd(t *testing.T) {
 	var (
 		newEnvSlices = func(envMap *EnvMap) []string {
 			return []string{
-				fmt.Sprintf("GBROWSE_GIT=%s", e.git),                // mock git binary
+				fmt.Sprintf("GIT=%s", e.git),                        // mock git binary
 				fmt.Sprintf("GBROWSE_GIT_CONFIG=%s", envMap.JSON()), // see cmd/gbrowse-git
 			}
 		}

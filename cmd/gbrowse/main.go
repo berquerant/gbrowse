@@ -25,10 +25,10 @@ Usage:
   gbrowse opens the directory of the repo.
 
 Environment variables:
-  GBROWSE_GIT
+  GIT
     git command, default is git.
 
-  GBROWSE_DEBUG
+  DEBUG
     enable debug log if set.
 
 Flags:`
