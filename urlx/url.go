@@ -31,6 +31,7 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target) (strin
 		if repoURL, err = gitCommand.RemoteOriginURL(ctx); err != nil {
 			return err
 		}
+		repoURL = parse.ReadRepoURL(repoURL)
 		if ref, err = gitCommand.CommitHash(ctx); err != nil {
 			return err
 		}
