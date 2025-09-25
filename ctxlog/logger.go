@@ -44,7 +44,7 @@ func (l *logger) logAttrs(level slog.Level, msg string, attrs ...Attr) {
 	for i, attr := range attrs {
 		sAttrs[i] = slog.Attr(attr)
 	}
-	l.l.LogAttrs(nil, level, msg, sAttrs...)
+	l.l.LogAttrs(context.TODO(), level, msg, sAttrs...)
 }
 
 func (l *logger) Info(msg string, attrs ...Attr) {
