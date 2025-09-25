@@ -2,10 +2,7 @@ module github.com/berquerant/gbrowse
 
 go 1.25.1
 
-require (
-	github.com/berquerant/execx v0.12.0
-	github.com/stretchr/testify v1.11.1
-)
+require github.com/stretchr/testify v1.11.1
 
 require (
 	github.com/berquerant/dataclass v0.4.0 // indirect

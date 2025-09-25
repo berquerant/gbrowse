@@ -1,7 +1,5 @@
 github.com/berquerant/dataclass v0.4.0 h1:POP74hOdKsI7TgaZQwHK5EiYiIRbpWsiExC42Cas1FU=
 github.com/berquerant/dataclass v0.4.0/go.mod h1:f0gBqxMmuOJkimyTZUQuijoIq+XXpgAhqNZE9vQTCP0=
-github.com/berquerant/execx v0.12.0 h1:NgCQ3DId5BUqOpcG5unQPNjbsDxBxgZOSMB7ich6gWc=
-github.com/berquerant/execx v0.12.0/go.mod h1:YX+n7j7CR0ZfiYe5HwzSLwiROSAubcvPH5omSmgxJ1Q=
 github.com/berquerant/goconfig v0.3.0 h1:ZE06HPp8aoXcdaNBWr3YsnMokfl5BBV4J0OHha5E8E0=
 github.com/berquerant/goconfig v0.3.0/go.mod h1:4fY4lQ98iRSU8Rn4huI7334mlVS46rAHjrAVfonzGzs=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

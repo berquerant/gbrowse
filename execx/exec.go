@@ -1,19 +1,20 @@
 package execx
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"os"
+	"os/exec"
 	"strings"
 
-	"github.com/berquerant/execx"
 	"github.com/berquerant/gbrowse/ctxlog"
 )
 
-func Run(ctx context.Context, command string, arg ...string) (result string, retErr error) {
+func Run(ctx context.Context, command string, arg ...string) (string, error) {
 	var (
 		logger = ctxlog.From(ctx)
-		cmd    = execx.New(command, arg...)
+		cmd    = exec.CommandContext(ctx, command, arg...)
 		genErr = func(err error) error {
 			err = fmt.Errorf("failed to run %s, %w", strings.Join(cmd.Args, " "), err)
 			logger.Debug("failed to execx.Run",
@@ -23,26 +24,22 @@ func Run(ctx context.Context, command string, arg ...string) (result string, ret
 			)
 			return err
 		}
+		stdout bytes.Buffer
+		stderr bytes.Buffer
 	)
 
-	cmd.Env = execx.EnvFromEnviron()
-	r, err := cmd.Run(ctx)
-	if err != nil {
-		retErr = genErr(err)
-		return
+	cmd.Env = os.Environ()
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return "", genErr(fmt.Errorf("%w: %s", err, stderr.String()))
 	}
 
-	stdout, err := io.ReadAll(r.Stdout)
-	if err != nil {
-		retErr = genErr(err)
-		return
-	}
-
-	result = strings.TrimSuffix(string(stdout), "\n")
+	result := strings.TrimSuffix(stdout.String(), "\n")
 	logger.Debug("execx.Run",
 		ctxlog.S("command", strings.Join(cmd.Args, " ")),
 		ctxlog.SS("command_list", cmd.Args),
 		ctxlog.S("result", result),
 	)
-	return
+	return result, nil
 }
