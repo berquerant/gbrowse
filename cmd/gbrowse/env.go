@@ -11,14 +11,12 @@ import (
 type envConfig struct {
 	Git     string
 	IsDebug bool
-	Config  string
 }
 
 func newEnvConfig() *envConfig {
 	var c envConfig
 	c.Git = env.GetOr("GBROWSE_GIT", "git")
 	c.IsDebug = env.GetOr("GBROWSE_DEBUG", "") != ""
-	c.Config = env.GetOr("GBROWSE_CONFIG", "")
 	return &c
 }
 
