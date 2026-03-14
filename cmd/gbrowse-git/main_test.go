@@ -87,7 +87,6 @@ func TestEndToEnd(t *testing.T) {
 				want: commitHash,
 			},
 		} {
-			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
 				output, err := run(envSlices, e.git, tc.args...)
 				assert.Nil(t, err)

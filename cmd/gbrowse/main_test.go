@@ -91,7 +91,6 @@ func TestEndToEnd(t *testing.T) {
 					want: strings.Join([]string{envs.RemoteOriginURL, "blob", envs.CommitHash, envs.ShowPrefix, "dir/file#L10"}, "/"),
 				},
 			} {
-				tc := tc
 				t.Run(tc.name, func(t *testing.T) {
 					output, err := run(envSlices, e.cmd, tc.opt...)
 					assert.Nil(t, err)

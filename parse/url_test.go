@@ -29,7 +29,6 @@ func TestReadRepoUrl(t *testing.T) {
 			want:  "https://github.com/berquerant/rpath",
 		},
 	} {
-		tc := tc
 		t.Run(tc.title, func(t *testing.T) {
 			got := parse.ReadRepoURL(tc.value)
 			assert.Equal(t, tc.want, got)

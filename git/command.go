@@ -44,7 +44,7 @@ func (g *gitImpl) DefaultBranch(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	for _, p := range strings.Split(r, "\n") {
+	for p := range strings.SplitSeq(r, "\n") {
 		if strings.Contains(p, "HEAD branch:") {
 			xs := strings.Split(p, ":")
 			if len(xs) < 2 {

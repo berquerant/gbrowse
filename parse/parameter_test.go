@@ -34,7 +34,6 @@ func TestReadTarget(t *testing.T) {
 			want:  parse.NewTarget("a", 1),
 		},
 	} {
-		tc := tc
 		t.Run(tc.title, func(t *testing.T) {
 			got, err := parse.ReadTarget(tc.value)
 			assert.Nil(t, err)
