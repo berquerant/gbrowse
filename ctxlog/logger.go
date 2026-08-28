@@ -12,10 +12,22 @@ var ctxKeyValue ctxKey = "ctxKeyValue"
 
 // From finds Logger from context.
 func From(ctx context.Context) Logger {
-	val := ctx.Value(ctxKeyValue)
-	instance, _ := val.(*logger)
-	return instance
+	if ctx == nil {
+		return &noopLogger{}
+	}
+	if val := ctx.Value(ctxKeyValue); val != nil {
+		if instance, ok := val.(*logger); ok && instance != nil {
+			return instance
+		}
+	}
+	return &noopLogger{}
 }
+
+type noopLogger struct{}
+
+func (n *noopLogger) Error(msg string, attrs ...Attr) {}
+func (n *noopLogger) Info(msg string, attrs ...Attr)  {}
+func (n *noopLogger) Debug(msg string, attrs ...Attr) {}
 
 // With embeds Logger in context.
 func With(ctx context.Context, instance Logger) context.Context {

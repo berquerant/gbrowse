@@ -4,6 +4,6 @@ package browse
 
 func command(target string) []string {
 	return []string{
-		"start", target,
+		"cmd", "/c", "start", target,
 	}
 }
