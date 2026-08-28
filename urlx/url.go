@@ -40,7 +40,7 @@ func build(ctx context.Context, gitCommand git.Git, target *parse.Target) (strin
 			if err != nil {
 				return err
 			}
-			path = filepath.Join(r, target.Path())
+			path = filepath.ToSlash(filepath.Join(r, target.Path()))
 		} else if path, err = gitCommand.RelativePath(ctx, target.Path()); err != nil {
 			return err
 		}

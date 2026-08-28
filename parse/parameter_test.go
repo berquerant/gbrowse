@@ -8,16 +8,17 @@ import (
 )
 
 func TestReadTarget(t *testing.T) {
-	t.Run("invalid target", func(t *testing.T) {
-		_, err := parse.ReadTarget("a:b")
-		assert.NotNil(t, err)
-	})
-
 	for _, tc := range []struct {
-		title string
-		value string
-		want  *parse.Target
+		title   string
+		value   string
+		want    *parse.Target
+		wantErr bool
 	}{
+		{
+			title:   "invalid target",
+			value:   "a:b",
+			wantErr: true,
+		},
 		{
 			title: "empty",
 			value: "",
@@ -36,6 +37,10 @@ func TestReadTarget(t *testing.T) {
 	} {
 		t.Run(tc.title, func(t *testing.T) {
 			got, err := parse.ReadTarget(tc.value)
+			if tc.wantErr {
+				assert.NotNil(t, err)
+				return
+			}
 			assert.Nil(t, err)
 			assert.Equal(t, tc.want.Path(), got.Path())
 
