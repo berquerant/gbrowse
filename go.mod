@@ -1,6 +1,6 @@
 module github.com/berquerant/gbrowse
 
-go 1.26.2
+go 1.26.6
 
 require github.com/stretchr/testify v1.12.0
 
