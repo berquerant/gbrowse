@@ -71,3 +71,77 @@ func TestBuild(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildCommit(t *testing.T) {
+	gitCmd := &mockGit{
+		remoteOriginURL: "git@github.com:berquerant/gbrowse.git",
+		commitHash:      "0123456789abcdef",
+	}
+
+	for _, tc := range []struct {
+		name    string
+		commit  string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "specified commit",
+			commit: "fedcba9876543210",
+			want:   "https://github.com/berquerant/gbrowse/commit/fedcba9876543210",
+		},
+		{
+			name:   "empty commit uses current commit",
+			commit: "",
+			want:   "https://github.com/berquerant/gbrowse/commit/0123456789abcdef",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := urlx.BuildCommit(context.Background(), gitCmd, tc.commit)
+			if tc.wantErr {
+				assert.NotNil(t, err)
+				return
+			}
+			assert.Nil(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestBuildCompare(t *testing.T) {
+	gitCmd := &mockGit{
+		remoteOriginURL: "git@github.com:berquerant/gbrowse.git",
+		commitHash:      "0123456789abcdef",
+	}
+
+	for _, tc := range []struct {
+		name    string
+		base    string
+		target  string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "specified base and target",
+			base:   "main",
+			target: "feature",
+			want:   "https://github.com/berquerant/gbrowse/compare/main...feature",
+		},
+		{
+			name:   "empty target uses current commit",
+			base:   "main",
+			target: "",
+			want:   "https://github.com/berquerant/gbrowse/compare/main...0123456789abcdef",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := urlx.BuildCompare(context.Background(), gitCmd, tc.base, tc.target)
+			if tc.wantErr {
+				assert.NotNil(t, err)
+				return
+			}
+			assert.Nil(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+

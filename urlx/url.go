@@ -19,6 +19,36 @@ func Build(ctx context.Context, gitCommand git.Git, target *parse.Target) (strin
 	return u, nil
 }
 
+// BuildCommit assembles url for viewing a commit.
+func BuildCommit(ctx context.Context, gitCommand git.Git, commit string) (string, error) {
+	repoURL, err := gitCommand.RemoteOriginURL(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get remote origin url: %w", err)
+	}
+	repoURL = parse.ReadRepoURL(repoURL)
+	if commit == "" {
+		if commit, err = gitCommand.CommitHash(ctx); err != nil {
+			return "", fmt.Errorf("failed to get commit hash: %w", err)
+		}
+	}
+	return fmt.Sprintf("%s/commit/%s", repoURL, commit), nil
+}
+
+// BuildCompare assembles url for viewing comparison between two refs.
+func BuildCompare(ctx context.Context, gitCommand git.Git, base, target string) (string, error) {
+	repoURL, err := gitCommand.RemoteOriginURL(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get remote origin url: %w", err)
+	}
+	repoURL = parse.ReadRepoURL(repoURL)
+	if target == "" {
+		if target, err = gitCommand.CommitHash(ctx); err != nil {
+			return "", fmt.Errorf("failed to get commit hash: %w", err)
+		}
+	}
+	return fmt.Sprintf("%s/compare/%s...%s", repoURL, base, target), nil
+}
+
 func build(ctx context.Context, gitCommand git.Git, target *parse.Target) (string, error) {
 	var (
 		repoURL  string
