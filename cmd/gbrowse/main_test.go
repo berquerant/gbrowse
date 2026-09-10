@@ -98,6 +98,69 @@ func TestEndToEnd(t *testing.T) {
 				})
 			}
 		})
+
+		t.Run("commit", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := newEnvSlices(envs)
+
+			for _, tc := range []struct {
+				name string
+				opt  []string
+				want string
+			}{
+				{
+					name: "current commit",
+					opt:  []string{"-print", "-commit"},
+					want: fmt.Sprintf("%s/commit/%s", envs.RemoteOriginURL, envs.CommitHash),
+				},
+				{
+					name: "specified commit",
+					opt:  []string{"-print", "-commit", "other-commit-hash"},
+					want: fmt.Sprintf("%s/commit/other-commit-hash", envs.RemoteOriginURL),
+				},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					output, err := run(envSlices, e.cmd, tc.opt...)
+					assert.Nil(t, err)
+					assert.Equal(t, tc.want, string(output))
+				})
+			}
+		})
+
+		t.Run("compare", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := newEnvSlices(envs)
+
+			for _, tc := range []struct {
+				name string
+				opt  []string
+				want string
+			}{
+				{
+					name: "compare to current commit",
+					opt:  []string{"-print", "-compare", "main"},
+					want: fmt.Sprintf("%s/compare/main...%s", envs.RemoteOriginURL, envs.CommitHash),
+				},
+				{
+					name: "compare between two refs",
+					opt:  []string{"-print", "-compare", "v1.0.0", "v2.0.0"},
+					want: fmt.Sprintf("%s/compare/v1.0.0...v2.0.0", envs.RemoteOriginURL),
+				},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					output, err := run(envSlices, e.cmd, tc.opt...)
+					assert.Nil(t, err)
+					assert.Equal(t, tc.want, string(output))
+				})
+			}
+		})
+
+		t.Run("error both commit and compare", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := newEnvSlices(envs)
+			_, err := run(envSlices, e.cmd, "-print", "-commit", "-compare", "main")
+			assert.NotNil(t, err)
+		})
 	})
 
 }
