@@ -33,6 +33,7 @@ gbrowse/
 ├── env/                # Helper: env.GetOr()
 ├── execx/              # Helper: runs an external command and returns stdout
 ├── git/                # git.Git interface + implementation using execx
+├── mcp/                # MCP server implementation for stdio transport
 ├── parse/              # Parses target strings and remote URLs
 ├── urlx/               # Assembles the final GitHub blob URL
 ├── dist/               # Build output (gitignored)
@@ -50,6 +51,7 @@ gbrowse/
 | `env` | `env.GetOr(key, default)` — thin wrapper around `os.Getenv` |
 | `execx` | `execx.Run(ctx, cmd, args...)` — runs a process and returns trimmed stdout |
 | `git` | `git.Git` interface with methods like `RemoteOriginURL`, `CommitHash`, `ShowPrefix`, `RelativePath` |
+| `mcp` | MCP server exposing `gbrowse_url` tool over stdio |
 | `parse` | `parse.ReadTarget(s)` parses `PATH` or `FILE:LINUM`; `parse.ReadRepoURL` normalises remote URLs |
 | `urlx` | `urlx.Build(ctx, git, target)` assembles the final blob URL |
 

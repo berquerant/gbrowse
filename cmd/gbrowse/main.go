@@ -10,6 +10,7 @@ import (
 	"github.com/berquerant/gbrowse/browse"
 	"github.com/berquerant/gbrowse/ctxlog"
 	"github.com/berquerant/gbrowse/git"
+	"github.com/berquerant/gbrowse/mcp"
 	"github.com/berquerant/gbrowse/parse"
 	"github.com/berquerant/gbrowse/urlx"
 )
@@ -30,6 +31,8 @@ Usage:
   gbrowse -compare <COMPARE> [target] opens the comparison page between COMPARE and target.
   If target is omitted, the current commit is used.
 
+  gbrowse -mcp starts the MCP server over stdio.
+
 Environment variables:
   GIT
     git command, default is git.
@@ -49,6 +52,7 @@ func main() {
 		printOnly = flag.Bool("print", false, "only print generated url")
 		commit    = flag.Bool("commit", false, "open commit page")
 		compare   = flag.String("compare", "", "open compare page between the specified ref and target")
+		mcpServer = flag.Bool("mcp", false, "run mcp server")
 		envConfig = newEnvConfig()
 		logger    = envConfig.logger()
 	)
@@ -65,7 +69,22 @@ func main() {
 		)
 	})
 
-	run(ctxlog.With(context.Background(), logger), &args{
+	ctx := ctxlog.With(context.Background(), logger)
+
+	if *mcpServer {
+		ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+		defer stop()
+		if err := mcp.Run(ctx, mcp.ServerConfig{
+			GitCommand: envConfig.Git,
+			Logger:     logger,
+		}); err != nil {
+			logger.Error("mcp server error", ctxlog.Err(err))
+			eFailure.exit()
+		}
+		eSuccess.exit()
+	}
+
+	run(ctx, &args{
 		envConfig: envConfig,
 		target:    flag.Arg(0),
 		printOnly: *printOnly,
