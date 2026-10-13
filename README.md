@@ -18,6 +18,8 @@ Usage:
   gbrowse -compare <COMPARE> [target] opens the comparison page between COMPARE and target.
   If target is omitted, the current commit is used.
 
+  gbrowse -mcp starts the MCP server over stdio.
+
 Environment variables:
   GIT
     git command, default is git.
@@ -30,6 +32,8 @@ Flags:
     	open commit page
   -compare string
     	open compare page between the specified ref and target
+  -mcp
+    	run mcp server
   -print
     	only print generated url
 ```

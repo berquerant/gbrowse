@@ -161,6 +161,17 @@ func TestEndToEnd(t *testing.T) {
 			_, err := run(envSlices, e.cmd, "-print", "-commit", "-compare", "main")
 			assert.NotNil(t, err)
 		})
+
+		t.Run("mcp server", func(t *testing.T) {
+			envs := defaultEnvMap()
+			envSlices := newEnvSlices(envs)
+			// Send empty input to stdin of gbrowse -mcp, which should exit gracefully on EOF
+			cmd := exec.Command(e.cmd, "-mcp")
+			cmd.Env = envSlices
+			cmd.Dir = "."
+			output, err := cmd.CombinedOutput()
+			assert.Nil(t, err, "output: %s", string(output))
+		})
 	})
 
 }
